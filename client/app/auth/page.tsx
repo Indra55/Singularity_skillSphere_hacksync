@@ -102,7 +102,10 @@ export default function AuthPage() {
           )}
 
           {authMode === "signup" && (
-            <SignUpForm onBack={() => setAuthMode("select")} />
+            <SignUpForm 
+                onBack={() => setAuthMode("select")} 
+                onSwitchToLogin={() => setAuthMode("login")}
+            />
           )}
 
           {authMode === "login" && (
@@ -114,7 +117,7 @@ export default function AuthPage() {
   )
 }
 
-function SignUpForm({ onBack }: { onBack: () => void }) {
+function SignUpForm({ onBack, onSwitchToLogin }: { onBack: () => void, onSwitchToLogin: () => void }) {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -123,7 +126,7 @@ function SignUpForm({ onBack }: { onBack: () => void }) {
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     const newErrors: Record<string, string> = {}
 
@@ -149,12 +152,54 @@ function SignUpForm({ onBack }: { onBack: () => void }) {
       return
     }
 
-    // Store user data (in a real app, this would be sent to a backend)
-    localStorage.setItem("user", JSON.stringify({ name: formData.name, email: formData.email }))
-    localStorage.setItem("isAuthenticated", "true")
+    try {
+        // Register user
+        const regRes = await fetch("/api/users/register", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                full_name: formData.name,
+                email: formData.email,
+                password: formData.password
+            })
+        });
 
-    // Redirect to onboarding
-    window.location.href = "/journey"
+        const regData = await regRes.json();
+
+        if (!regRes.ok) {
+            setErrors({ ...errors, form: regData.error || "Registration failed" });
+            return;
+        }
+
+        // Auto-login after registration
+        const loginRes = await fetch("/api/users/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                email: formData.email,
+                password: formData.password
+            })
+        });
+
+        if (!loginRes.ok) {
+            // Should not happen if reg succeeded, but handle anyway
+            onSwitchToLogin(); // Redirect to login form
+            return;
+        }
+
+        const loginData = await loginRes.json();
+
+        // Store user data
+        localStorage.setItem("user", JSON.stringify(loginData.user));
+        localStorage.setItem("isAuthenticated", "true");
+
+        // Redirect to onboarding
+        window.location.href = "/journey";
+
+    } catch (err) {
+        console.error("Signup error:", err);
+        setErrors({ ...errors, form: "Network error. Please try again." });
+    }
   }
 
   return (
@@ -258,7 +303,7 @@ function LoginForm({ onBack }: { onBack: () => void }) {
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     const newErrors: Record<string, string> = {}
 
@@ -276,17 +321,34 @@ function LoginForm({ onBack }: { onBack: () => void }) {
       return
     }
 
-    // In a real app, this would verify credentials with a backend
-    // For now, we'll just set authentication and redirect
-    localStorage.setItem("isAuthenticated", "true")
-    const userData = localStorage.getItem("user")
-    if (!userData) {
-      // If no user data exists, create a default one
-      localStorage.setItem("user", JSON.stringify({ name: "User", email: formData.email }))
-    }
+    try {
+        const res = await fetch("/api/users/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                email: formData.email,
+                password: formData.password
+            })
+        });
 
-    // Redirect to dashboard
-    window.location.href = "/dashboard"
+        const data = await res.json();
+
+        if (!res.ok) {
+            setErrors({ ...errors, form: data.error || "Login failed" });
+            return;
+        }
+
+        // Store user data
+        localStorage.setItem("user", JSON.stringify(data.user));
+        localStorage.setItem("isAuthenticated", "true");
+
+        // Redirect to dashboard
+        window.location.href = "/dashboard";
+
+    } catch (err) {
+        console.error("Login error:", err);
+        setErrors({ ...errors, form: "Network error. Please try again." });
+    }
   }
 
   return (

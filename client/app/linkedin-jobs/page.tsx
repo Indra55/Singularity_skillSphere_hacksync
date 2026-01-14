@@ -6,7 +6,8 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Bell, Linkedin, MapPin, Briefcase, DollarSign, Star, ExternalLink, Settings } from "lucide-react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useAuth } from "@/lib/auth-context"
 import "@/app/dashboard/dashboard.css"
 
 interface JobNotification {
@@ -19,55 +20,52 @@ interface JobNotification {
   posted: string
   type: "new" | "updated" | "recommended"
   description: string
+  url?: string
 }
 
 export default function LinkedInJobsPage() {
-  const [notifications] = useState<JobNotification[]>([
-    {
-      id: "1",
-      title: "Senior Software Engineer - AI/ML",
-      company: "TechCorp",
-      location: "San Francisco, CA / Remote",
-      salary: "$180K - $220K",
-      match: 94,
-      posted: "2 hours ago",
-      type: "new",
-      description: "Looking for an experienced engineer to build AI-powered features...",
-    },
-    {
-      id: "2",
-      title: "Full-Stack Developer",
-      company: "StartupXYZ",
-      location: "New York, NY",
-      salary: "$140K - $170K",
-      match: 87,
-      posted: "5 hours ago",
-      type: "recommended",
-      description: "Join our fast-growing team to build the next generation platform...",
-    },
-    {
-      id: "3",
-      title: "Tech Lead - Infrastructure",
-      company: "CloudScale",
-      location: "Remote",
-      salary: "$200K - $250K",
-      match: 91,
-      posted: "1 day ago",
-      type: "updated",
-      description: "Lead infrastructure initiatives for our cloud-native platform...",
-    },
-    {
-      id: "4",
-      title: "Product Manager - Developer Tools",
-      company: "DevTools Inc",
-      location: "Seattle, WA",
-      salary: "$150K - $190K",
-      match: 82,
-      posted: "2 days ago",
-      type: "recommended",
-      description: "Shape the future of developer experience with cutting-edge tools...",
-    },
-  ])
+  const { user } = useAuth()
+  const [notifications, setNotifications] = useState<JobNotification[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchJobs = async () => {
+      try {
+        setLoading(true)
+        console.log("Frontend: Fetching jobs from /api/jobs/linkedin")
+        
+        const res = await fetch("/api/jobs/linkedin", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        })
+
+        console.log("Frontend: Response status:", res.status, res.statusText)
+
+        if (!res.ok) {
+            const errorText = await res.text();
+            console.error("Frontend: Response error text:", errorText);
+            throw new Error(`Failed to fetch jobs: ${res.status} ${res.statusText}`)
+        }
+        
+        const data = await res.json()
+        console.log("Frontend: Received data:", data)
+        setNotifications(data.jobs || [])
+      } catch (error) {
+        console.error("Frontend: Error fetching jobs:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    if (user) {
+      fetchJobs()
+    } else {
+        setLoading(false) 
+    }
+  }, [user])
+
 
   const stats = {
     total: notifications.length,
@@ -145,45 +143,57 @@ export default function LinkedInJobsPage() {
 
             {/* Job Notifications */}
             <section className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-100">
-              {notifications.map((job) => (
-                <Card
-                  key={job.id}
-                  className="p-6 border-border/40 bg-card/50 backdrop-blur-sm hover:bg-card/60 transition-all duration-300"
-                >
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h3 className="text-xl font-semibold text-foreground">{job.title}</h3>
-                        <Badge className={typeColors[job.type]}>{job.type}</Badge>
-                        <Badge className="bg-primary/20 text-primary">{job.match}% match</Badge>
+              {loading ? (
+                 <div className="text-center py-10">
+                    <p className="text-muted-foreground">Finding the best opportunities for you...</p>
+                 </div>
+              ) : notifications.length > 0 ? (
+                notifications.map((job) => (
+                    <Card
+                      key={job.id}
+                      className="p-6 border-border/40 bg-card/50 backdrop-blur-sm hover:bg-card/60 transition-all duration-300"
+                    >
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                            <h3 className="text-xl font-semibold text-foreground">{job.title}</h3>
+                            <Badge className={typeColors[job.type] || "bg-secondary"}>{job.type}</Badge>
+                            <Badge className="bg-primary/20 text-primary">{job.match}% match</Badge>
+                          </div>
+                          <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
+                            <div className="flex items-center gap-1">
+                              <Briefcase className="w-4 h-4" />
+                              {job.company}
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <MapPin className="w-4 h-4" />
+                              {job.location}
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <DollarSign className="w-4 h-4" />
+                              {job.salary}
+                            </div>
+                          </div>
+                          <p className="text-muted-foreground mb-3">{job.description}</p>
+                          <p className="text-xs text-muted-foreground">Posted {job.posted}</p>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
-                        <div className="flex items-center gap-1">
-                          <Briefcase className="w-4 h-4" />
-                          {job.company}
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <MapPin className="w-4 h-4" />
-                          {job.location}
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <DollarSign className="w-4 h-4" />
-                          {job.salary}
-                        </div>
+                      <div className="flex gap-2 mt-4">
+                        <Button variant="outline" className="flex-1" asChild>
+                          <a href={job.url || "#"} target="_blank" rel="noopener noreferrer">
+                            View on LinkedIn
+                            <ExternalLink className="w-4 h-4 ml-2" />
+                          </a>
+                        </Button>
+                        <Button className="flex-1 bg-primary hover:bg-primary/90">Apply Now</Button>
                       </div>
-                      <p className="text-muted-foreground mb-3">{job.description}</p>
-                      <p className="text-xs text-muted-foreground">Posted {job.posted}</p>
-                    </div>
-                  </div>
-                  <div className="flex gap-2 mt-4">
-                    <Button variant="outline" className="flex-1">
-                      View on LinkedIn
-                      <ExternalLink className="w-4 h-4 ml-2" />
-                    </Button>
-                    <Button className="flex-1 bg-primary hover:bg-primary/90">Apply Now</Button>
-                  </div>
-                </Card>
-              ))}
+                    </Card>
+                ))
+              ) : (
+                <div className="text-center py-10">
+                    <p className="text-muted-foreground">No jobs found matching your profile.</p>
+                </div>
+              )}
             </section>
           </div>
         </main>
