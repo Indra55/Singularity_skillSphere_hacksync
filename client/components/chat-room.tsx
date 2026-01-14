@@ -1,8 +1,9 @@
 "use client"
 
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useState, useRef } from "react"
 import io, { Socket } from "socket.io-client"
 import { Send, User } from "lucide-react"
+import ReactMarkdown from "react-markdown"
 
 interface Message {
   room: string
@@ -16,19 +17,19 @@ interface ChatRoomProps {
   username: string
 }
 
-// Initializing socket outside component to prevent multiple connections
-let socket: Socket
-
 export function ChatRoom({ roomId, username }: ChatRoomProps) {
   const [currentMessage, setCurrentMessage] = useState("")
   const [messageList, setMessageList] = useState<Message[]>([])
+  const [isAiTyping, setIsAiTyping] = useState(false)
+  const socketRef = useRef<Socket | null>(null)
 
   useEffect(() => {
     // Connect only if not already connected
-    if (!socket) {
-        socket = io("http://localhost:5555")
+    if (!socketRef.current) {
+        socketRef.current = io("http://localhost:5555")
     }
 
+    const socket = socketRef.current
     socket.emit("join_room", roomId)
 
     const handleReceiveMessage = (data: Message) => {
@@ -42,8 +43,59 @@ export function ChatRoom({ roomId, username }: ChatRoomProps) {
     }
   }, [roomId])
 
+  const callAiBot = async (query: string, history: Message[]) => {
+    if (!socketRef.current) return
+    
+    try {
+        setIsAiTyping(true)
+        const context = history.slice(-5).map(m => `${m.author}: ${m.message}`).join("\n")
+        
+        const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${process.env.NEXT_PUBLIC_OPENROUTER_API_KEY}`,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                "model": "xiaomi/mimo-v2-flash:free",
+                "messages": [
+                    {
+                        "role": "system",
+                        "content": `You are SkillsBot, a helpful AI assistant in a peer learning chat room about ${roomId}. 
+                        Context of recent discussion:
+                        ${context}
+
+                        Answer the user's query mainly but use the context if needed. Keep it concise.`
+                    },
+                    {
+                        "role": "user",
+                        "content": query
+                    }
+                ]
+            })
+        })
+
+        const data = await response.json()
+        const aiText = data.choices?.[0]?.message?.content || "Sorry, I couldn't process that."
+
+        const aiMessage: Message = {
+            room: roomId,
+            author: "SkillsBot",
+            message: aiText,
+            time: new Date().getHours() + ":" + String(new Date().getMinutes()).padStart(2, '0')
+        }
+
+        socketRef.current.emit("send_message", aiMessage)
+        setMessageList((list) => [...list, aiMessage])
+    } catch (error) {
+        console.error("AI Error:", error)
+    } finally {
+        setIsAiTyping(false)
+    }
+  }
+
   const sendMessage = async () => {
-    if (currentMessage !== "") {
+    if (currentMessage !== "" && socketRef.current) {
       const messageData: Message = {
         room: roomId,
         author: username,
@@ -54,9 +106,14 @@ export function ChatRoom({ roomId, username }: ChatRoomProps) {
           String(new Date(Date.now()).getMinutes()).padStart(2, '0'),
       }
 
-      await socket.emit("send_message", messageData)
+      socketRef.current.emit("send_message", messageData)
       setMessageList((list) => [...list, messageData])
       setCurrentMessage("")
+
+      if (messageData.message.includes("@skillsBot")) {
+        const query = messageData.message.replace("@skillsBot", "").trim()
+        await callAiBot(query, messageList)
+      }
     }
   }
 
@@ -87,6 +144,8 @@ export function ChatRoom({ roomId, username }: ChatRoomProps) {
         )}
         {messageList.map((messageContent, index) => {
           const isMe = username === messageContent.author
+          const isAi = messageContent.author === "SkillsBot"
+
           return (
             <div
               key={index}
@@ -96,23 +155,52 @@ export function ChatRoom({ roomId, username }: ChatRoomProps) {
                 className={`max-w-[75%] rounded-2xl px-4 py-2 ${
                   isMe
                     ? "bg-orange-500 text-white rounded-br-sm"
-                    : "bg-orange-50 text-orange-950 rounded-bl-sm"
+                    : isAi 
+                        ? "bg-gradient-to-br from-violet-500 to-purple-600 text-white rounded-bl-sm shadow-lg"
+                        : "bg-orange-50 text-orange-950 rounded-bl-sm"
                 }`}
               >
                 {!isMe && (
                     <div className="flex items-center gap-1 mb-1 opacity-70">
-                        <User className="w-3 h-3" />
+                        {isAi ? <span className="text-xs">🤖</span> : <User className="w-3 h-3" />}
                         <span className="text-[10px] font-bold">{messageContent.author}</span>
                     </div>
                 )}
-                <p className="text-sm">{messageContent.message}</p>
-                <p className={`text-[10px] mt-1 ${isMe ? "text-white/80" : "text-orange-900/60"} text-right`}>
+                {isAi ? (
+                  <div className="text-sm prose prose-sm prose-invert max-w-none">
+                    <ReactMarkdown
+                      components={{
+                        p: ({node, ...props}) => <p className="mb-1 last:mb-0" {...props} />,
+                        strong: ({node, ...props}) => <strong className="font-bold" {...props} />,
+                        em: ({node, ...props}) => <em className="italic" {...props} />,
+                        code: ({node, ...props}) => <code className="bg-white/20 rounded px-1 py-0.5 text-xs" {...props} />,
+                        ul: ({node, ...props}) => <ul className="list-disc list-inside mb-1" {...props} />,
+                        ol: ({node, ...props}) => <ol className="list-decimal list-inside mb-1" {...props} />,
+                      }}
+                    >
+                      {messageContent.message}
+                    </ReactMarkdown>
+                  </div>
+                ) : (
+                  <p className="text-sm whitespace-pre-wrap">{messageContent.message}</p>
+                )}
+                <p className={`text-[10px] mt-1 ${isMe || isAi ? "text-white/80" : "text-orange-900/60"} text-right`}>
                     {messageContent.time}
                 </p>
               </div>
             </div>
           )
         })}
+        {isAiTyping && (
+            <div className="flex justify-start">
+                 <div className="bg-violet-100 text-violet-800 rounded-2xl px-4 py-2 rounded-bl-sm text-xs flex items-center gap-1">
+                    <span className="animate-pulse">●</span>
+                    <span className="animate-pulse delay-75">●</span>
+                    <span className="animate-pulse delay-150">●</span>
+                    SkillsBot is typing...
+                 </div>
+            </div>
+        )}
       </div>
 
       <div className="p-4 bg-background border-t border-border">
@@ -120,7 +208,7 @@ export function ChatRoom({ roomId, username }: ChatRoomProps) {
           <input
             type="text"
             value={currentMessage}
-            placeholder="Type your message..."
+            placeholder="Type your message... (use @skillsBot to ask AI)"
             className="flex-1 bg-muted/50 border border-input hover:border-primary/50 focus:border-primary rounded-lg px-4 py-2 text-sm transition-colors outline-none"
             onChange={(event) => {
               setCurrentMessage(event.target.value)
