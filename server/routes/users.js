@@ -8,14 +8,14 @@ const { authenticateToken } = require("../middleware/auth");
 // Register new user
 router.post("/register", async (req, res) => {
   try {
-    const { full_name, email, password } = req.body;
+    const { username, email, password } = req.body;
 
     // Validation
-    if (!full_name || !email || !password) {
-      return res.status(400).json({ error: "Please provide full_name, email, and password" });
+    if (!username || !email || !password) {
+      return res.status(400).json({ error: "Please provide username, email, and password" });
     }
 
-    if (password.length < 7) {
+    if (password.length < 8) {
       return res.status(400).json({ error: "Password must be at least 8 characters" });
     }
 
@@ -29,8 +29,8 @@ router.post("/register", async (req, res) => {
     // Hash password and create user
     const hashedPassword = await bcrypt.hash(password, 12);
     const result = await pool.query(
-      "INSERT INTO users (full_name, email, password) VALUES ($1, $2, $3) RETURNING id, full_name, email",
-      [full_name, email, hashedPassword]
+      "INSERT INTO users (username, email, password) VALUES ($1, $2, $3) RETURNING id, username, email",
+      [username, email, hashedPassword]
     );
 
     res.status(201).json({
@@ -88,7 +88,7 @@ router.post("/login", async (req, res) => {
       message: "Login successful",
       user: {
         id: user.id,
-        full_name: user.full_name,
+        username: user.username,
         email: user.email,
         onboarding_completed: user.onboarding_completed
       },
@@ -116,11 +116,11 @@ router.get("/me", authenticateToken, (req, res) => {
 // Update user profile
 router.put("/me", authenticateToken, async (req, res) => {
   try {
-    const { full_name, phone, location, proficiency_level, preferred_work_mode, availability_timeline, career_goal_short, career_goal_long } = req.body;
+    const { username, phone, location, proficiency_level, preferred_work_mode, availability_timeline, career_goal_short, career_goal_long } = req.body;
 
     const result = await pool.query(
       `UPDATE users SET 
-        full_name = COALESCE($1, full_name),
+        username = COALESCE($1, username),
         phone = COALESCE($2, phone),
         location = COALESCE($3, location),
         proficiency_level = COALESCE($4, proficiency_level),
@@ -129,8 +129,8 @@ router.put("/me", authenticateToken, async (req, res) => {
         career_goal_short = COALESCE($7, career_goal_short),
         career_goal_long = COALESCE($8, career_goal_long),
         updated_at = now()
-      WHERE id = $9 RETURNING id, full_name, email, phone, location, proficiency_level, preferred_work_mode, availability_timeline, career_goal_short, career_goal_long`,
-      [full_name, phone, location, proficiency_level, preferred_work_mode, availability_timeline, career_goal_short, career_goal_long, req.user.id]
+      WHERE id = $9 RETURNING id, username, email, phone, location, proficiency_level, preferred_work_mode, availability_timeline, career_goal_short, career_goal_long`,
+      [username, phone, location, proficiency_level, preferred_work_mode, availability_timeline, career_goal_short, career_goal_long, req.user.id]
     );
 
     res.json({

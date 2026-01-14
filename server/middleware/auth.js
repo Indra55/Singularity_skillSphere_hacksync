@@ -20,7 +20,7 @@ async function authenticateToken(req, res, next) {
 
         // Fetch user from database with all relevant profile fields
         const result = await pool.query(
-            "SELECT id, full_name, email, phone, location, proficiency_level, preferred_work_mode, availability_timeline, career_goal_short, career_goal_long, onboarding_completed, onboarding_step FROM users WHERE id = $1",
+            "SELECT id, username, email, phone, location, proficiency_level, preferred_work_mode, availability_timeline, career_goal_short, career_goal_long, onboarding_completed, onboarding_step FROM users WHERE id = $1",
             [decoded.userId]
         );
 
@@ -50,7 +50,7 @@ async function optionalAuth(req, res, next) {
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         const result = await pool.query(
-            "SELECT id, full_name, email, onboarding_completed FROM users WHERE id = $1",
+            "SELECT id, username, email, onboarding_completed FROM users WHERE id = $1",
             [decoded.userId]
         );
 

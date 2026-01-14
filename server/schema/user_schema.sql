@@ -6,35 +6,16 @@ CREATE EXTENSION IF NOT EXISTS vector;
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 -- ================================
--- UUID v8 GENERATOR (Postgres-side)
--- Draft-compatible, time-ordered, random-based
--- ================================
-
-CREATE OR REPLACE FUNCTION uuid_v8()
-RETURNS UUID
-LANGUAGE SQL
-AS $$
-SELECT (
-    overlay(
-        overlay(
-            gen_random_uuid()::text
-            PLACING to_char(EXTRACT(EPOCH FROM clock_timestamp())::bigint, 'FM0000000000000000')
-            FROM 1 FOR 16
-        )
-        PLACING '8'
-        FROM 15 FOR 1
-    )
-)::uuid;
-$$;
-
--- ================================
 -- USERS (CORE)
 -- ================================
 
 CREATE TABLE users (
-    id UUID PRIMARY KEY DEFAULT uuid_v8(),
+    -- Using native uuidv7() available in Postgres 18+
+    id UUID PRIMARY KEY DEFAULT uuidv7(),
 
-    full_name TEXT NOT NULL,
+    username TEXT NOT NULL,
+    name TEXT NOT NULL,
+    age INT,
     email TEXT UNIQUE NOT NULL,
     password TEXT NOT NULL, -- Added for authentication
     phone TEXT,
@@ -59,7 +40,7 @@ CREATE TABLE users (
 -- ================================
 
 CREATE TABLE education (
-    id UUID PRIMARY KEY DEFAULT uuid_v8(),
+    id UUID PRIMARY KEY DEFAULT uuidv7(),
     user_id UUID REFERENCES users(id) ON DELETE CASCADE,
 
     degree TEXT,
@@ -73,7 +54,7 @@ CREATE TABLE education (
 -- ================================
 
 CREATE TABLE experience (
-    id UUID PRIMARY KEY DEFAULT uuid_v8(),
+    id UUID PRIMARY KEY DEFAULT uuidv7(),
     user_id UUID REFERENCES users(id) ON DELETE CASCADE,
 
     title TEXT,
@@ -88,7 +69,7 @@ CREATE TABLE experience (
 -- ================================
 
 CREATE TABLE skills (
-    id UUID PRIMARY KEY DEFAULT uuid_v8(),
+    id UUID PRIMARY KEY DEFAULT uuidv7(),
     user_id UUID REFERENCES users(id) ON DELETE CASCADE,
 
     skill_name TEXT NOT NULL,
@@ -103,7 +84,7 @@ CREATE TABLE skills (
 -- ================================
 
 CREATE TABLE certifications_links (
-    id UUID PRIMARY KEY DEFAULT uuid_v8(),
+    id UUID PRIMARY KEY DEFAULT uuidv7(),
     user_id UUID REFERENCES users(id) ON DELETE CASCADE,
 
     label TEXT,

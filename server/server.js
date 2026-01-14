@@ -24,8 +24,12 @@ app.use(cookieParser())
 
 // Routes
 app.use("/api/users", require("./routes/users"))
-app.use("/api/posts", require("./routes/posts"))
 app.use("/api/jobs", require("./routes/jobs"))
+app.use("/api/onboarding", require("./routes/onboarding"))
+app.use("/api/profile", require("./routes/profile"))
+app.use("/api/recommendations", require("./routes/recommendations"))
+app.use("/api/skills", require("./routes/skills"))
+app.use("/api/resume", require("./routes/resume"))
 
 // Health check endpoint
 app.get("/", (req, res) => {
