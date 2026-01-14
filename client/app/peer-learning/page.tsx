@@ -3,6 +3,7 @@
 import { DynamicNavbar } from "@/components/dynamic-navbar"
 import { ProtectedRoute } from "@/components/protected-route"
 import { Users, BookOpen } from "lucide-react"
+import Link from "next/link"
 import "@/app/dashboard/dashboard.css"
 import { MockInterviewList } from "./components/mock-interview-list"
 import { MentorPlaceholder } from "./components/mentor-placeholder"
@@ -42,9 +43,10 @@ export default function PeerLearningPage() {
                 <div className="xl:col-span-3 space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
                         {ROOMS.map((room) => (
-                            <div 
+                            <Link 
+                                href={`/peer-learning/${room.id}`}
                                 key={room.id}
-                                className="group relative overflow-hidden rounded-xl border border-border/40 bg-card/50 backdrop-blur-sm p-6 hover:bg-card/80 transition-all duration-300 cursor-pointer"
+                                className="group relative overflow-hidden rounded-xl border border-border/40 bg-card/50 backdrop-blur-sm p-6 hover:bg-card/80 transition-all duration-300 cursor-pointer block"
                             >
                                 <div className="flex items-start justify-between mb-4">
                                     <div className="p-3 rounded-lg bg-primary/10 text-2xl group-hover:scale-110 transition-transform duration-300">
@@ -73,7 +75,7 @@ export default function PeerLearningPage() {
                                         Join Room <Users className="w-4 h-4" />
                                     </span>
                                 </div>
-                            </div>
+                            </Link>
                         ))}
                     </div>
                 </div>

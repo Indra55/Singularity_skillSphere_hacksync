@@ -158,7 +158,7 @@ function SignUpForm({ onBack, onSwitchToLogin }: { onBack: () => void, onSwitchT
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                full_name: formData.name,
+                username: formData.name,
                 email: formData.email,
                 password: formData.password
             })

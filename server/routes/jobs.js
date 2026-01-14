@@ -91,12 +91,13 @@ router.post("/linkedin", authenticateToken, async (req, res) => {
         if (RAPIDAPI_KEY) {
             const options = {
                 method: 'GET',
-                url: `https://${RAPIDAPI_HOST}/search`,
+                url: `https://${RAPIDAPI_HOST}/active-jb-24h`,
                 params: {
-                    keywords: career_goal_short || 'Software Engineer',
-                    location: location || 'United States',
+                    title_filter: career_goal_short || 'Software Engineer',
+                    location_filter: location || 'Mumbai',
                     limit: '10',
-                    sort: 'r' // Relevance
+                    offset: '0',
+                    description_type: 'text'
                 },
                 headers: {
                     'x-rapidapi-key': RAPIDAPI_KEY,
