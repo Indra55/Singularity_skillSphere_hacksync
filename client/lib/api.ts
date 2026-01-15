@@ -245,6 +245,33 @@ export async function getResumeInfo(): Promise<ApiResponse<ResumeInfo>> {
     return apiRequest<ResumeInfo>("/api/resume/info");
 }
 
+export interface TailoredResumeResponse {
+    tailored_resume_markdown: string;
+    changes_made: string[];
+    match_score_improvement: string;
+}
+
+export async function tailorResume(jobDescription: string): Promise<ApiResponse<TailoredResumeResponse>> {
+    return apiRequest<TailoredResumeResponse>("/api/resume/tailor", {
+        method: "POST",
+        body: JSON.stringify({ jobDescription }),
+    });
+}
+
+export async function updateResume(currentData: ResumeInfo, instruction: string): Promise<ApiResponse<ResumeInfo>> {
+    return apiRequest<ResumeInfo>("/api/resume/update", {
+        method: "POST",
+        body: JSON.stringify({ currentData, instruction }),
+    });
+}
+
+export async function generateLaTeX(data: ResumeInfo, template: string): Promise<ApiResponse<{ latex_code: string }>> {
+    return apiRequest<{ latex_code: string }>("/api/resume/generate-latex", {
+        method: "POST",
+        body: JSON.stringify({ data, template }),
+    });
+}
+
 // ==================== DASHBOARD API ====================
 
 export interface DashboardData {

@@ -1,225 +1,436 @@
 "use client"
 
+import { useState, useEffect, useRef } from "react"
 import { DynamicNavbar } from "@/components/dynamic-navbar"
 import { ProtectedRoute } from "@/components/protected-route"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Textarea } from "@/components/ui/textarea"
+import { ScrollArea } from "@/components/ui/scroll-area"
 import { Badge } from "@/components/ui/badge"
-import { FileText, Upload, Download, Sparkles, CheckCircle2, AlertCircle, TrendingUp } from "lucide-react"
-import { useState } from "react"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
+import { Loader2, Send, FileText, Sparkles, Download, Code, Target, Wand2, Plus, Award, TrendingUp, Lightbulb, CheckCircle } from "lucide-react"
+import ReactMarkdown from "react-markdown"
+import { useReactToPrint } from "react-to-print"
+import { getResumeInfo, updateResume, generateLaTeX, tailorResume, type ResumeInfo } from "@/lib/api"
+import { ModernTemplate, ClassicTemplate, MinimalTemplate } from "@/components/resume-templates"
 import "@/app/dashboard/dashboard.css"
 
-interface ResumeFeedback {
-  category: string
-  score: number
-  feedback: string
-  suggestion: string
-  status: "strength" | "improvement"
+interface Message {
+  role: "user" | "ai"
+  content: string
+  timestamp: Date
+  type?: "info" | "success" | "warning"
 }
 
+const QUICK_ACTIONS = [
+  { icon: Target, label: "Tailor to JD", action: "tailor", color: "text-blue-500" },
+  { icon: Wand2, label: "Improve Summary", action: "improve_summary", color: "text-purple-500" },
+  { icon: Plus, label: "Add Skills", action: "add_skills", color: "text-green-500" },
+  { icon: Award, label: "Highlight Achievements", action: "achievements", color: "text-amber-500" },
+]
+
+const EXAMPLE_PROMPTS = [
+  "Make my summary more impactful and results-oriented",
+  "Add Docker, Kubernetes, and AWS to my technical skills",
+  "Rewrite my experience bullets with stronger action verbs",
+  "Make my resume more suitable for a Senior Engineer role",
+  "Add quantifiable metrics to my project descriptions",
+]
+
 export default function ResumeBuilderPage() {
-  const [resumeScore] = useState(85)
-  const [activeTab, setActiveTab] = useState<"improvements" | "strengths">("improvements")
+  const [resumeInfo, setResumeInfo] = useState<ResumeInfo | null>(null)
+  const [selectedTemplate, setSelectedTemplate] = useState<"modern" | "classic" | "minimal">("modern")
+  const [instruction, setInstruction] = useState("")
+  const [loading, setLoading] = useState(false)
+  const [zoom, setZoom] = useState(0.75)
+  const [showTailorModal, setShowTailorModal] = useState(false)
+  const [jobDescription, setJobDescription] = useState("")
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      role: "ai",
+      content: "👋 Welcome to the AI Resume Editor!\n\nI can help you:\n- **Tailor** your resume to a specific job description\n- **Improve** sections like your summary or skills\n- **Add** new skills, achievements, or experiences\n- **Rewrite** content with stronger language\n\nUse the quick actions below or type your own instructions!",
+      timestamp: new Date(),
+      type: "info"
+    }
+  ])
 
-  const improvements: ResumeFeedback[] = [
-    {
-      category: "Technical Skills Section",
-      score: 65,
-      feedback: "Your technical skills are listed but lack quantifiable results",
-      suggestion:
-        "Add specific projects or metrics next to each skill (e.g., 'Python - Built ML model with 94% accuracy')",
-      status: "improvement",
-    },
-    {
-      category: "Achievement Metrics",
-      score: 58,
-      feedback: "Most bullet points describe tasks, not impact",
-      suggestion: "Transform 'Managed project deadline' to 'Delivered project 2 weeks early, saving $50K in costs'",
-      status: "improvement",
-    },
-    {
-      category: "Keywords for ATS",
-      score: 70,
-      feedback: "Missing industry-specific keywords that recruiters search for",
-      suggestion: "Add keywords from job descriptions you're targeting (e.g., 'Agile', 'CI/CD', 'Cloud Architecture')",
-      status: "improvement",
-    },
-  ]
+  const resumeRef = useRef<HTMLDivElement>(null)
+  const chatEndRef = useRef<HTMLDivElement>(null)
 
-  const strengths: ResumeFeedback[] = [
-    {
-      category: "Career Narrative",
-      score: 88,
-      feedback: "Your career progression is clear and compelling",
-      suggestion: "Keep showcasing your growth trajectory—it tells a strong story",
-      status: "strength",
-    },
-    {
-      category: "Formatting & Design",
-      score: 85,
-      feedback: "Clean, professional layout that's ATS-friendly",
-      suggestion: "Continue using this template as a proven format",
-      status: "strength",
-    },
-    {
-      category: "Experience Relevance",
-      score: 82,
-      feedback: "Your background aligns well with modern tech roles",
-      suggestion: "Highlight the bridge between your past and target roles",
-      status: "strength",
-    },
-  ]
+  const handlePrint = useReactToPrint({
+    contentRef: resumeRef,
+    documentTitle: `Resume_${resumeInfo?.extracted_name || 'User'}`,
+  })
+
+  useEffect(() => {
+    loadResume()
+  }, [])
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" })
+  }, [messages])
+
+  async function loadResume() {
+    const response = await getResumeInfo()
+    if (response.data) {
+      setResumeInfo(response.data)
+    }
+  }
+
+  async function handleQuickAction(action: string) {
+    switch (action) {
+      case "tailor":
+        setShowTailorModal(true)
+        break
+      case "improve_summary":
+        setInstruction("Improve my professional summary to be more impactful, concise, and results-oriented. Use strong action verbs.")
+        break
+      case "add_skills":
+        setInstruction("Suggest 5 relevant technical skills I should add based on my experience and current market demand.")
+        break
+      case "achievements":
+        setInstruction("Identify my key achievements and rewrite them with quantifiable metrics and impact statements.")
+        break
+    }
+  }
+
+  async function handleTailorToJD() {
+    if (!jobDescription.trim() || !resumeInfo) return
+
+    setShowTailorModal(false)
+    const userMsg: Message = { role: "user", content: "🎯 Tailoring resume to job description...", timestamp: new Date() }
+    setMessages(prev => [...prev, userMsg])
+    setLoading(true)
+
+    try {
+      const response = await tailorResume(jobDescription)
+
+      if (response.data) {
+        // Parse the tailored resume and update the state
+        const aiMsg: Message = {
+          role: "ai",
+          content: `✅ **Resume Tailored Successfully!**\n\n**Changes Made:**\n${response.data.changes_made.map((c: string) => `• ${c}`).join('\n')}\n\n**Match Improvement:** ${response.data.match_score_improvement}\n\n*The tailored resume is now shown in the preview. You can further refine it using the chat.*`,
+          timestamp: new Date(),
+          type: "success"
+        }
+        setMessages(prev => [...prev, aiMsg])
+      }
+    } catch (error) {
+      setMessages(prev => [...prev, { role: "ai", content: "❌ Failed to tailor resume. Please try again.", timestamp: new Date(), type: "warning" }])
+    } finally {
+      setLoading(false)
+      setJobDescription("")
+    }
+  }
+
+  async function handleUpdate() {
+    if (!instruction.trim() || !resumeInfo) return
+
+    const userMsg: Message = { role: "user", content: instruction, timestamp: new Date() }
+    setMessages(prev => [...prev, userMsg])
+    setLoading(true)
+
+    try {
+      const response = await updateResume(resumeInfo, instruction)
+
+      if (response.data) {
+        setResumeInfo(response.data)
+        const aiMsg: Message = {
+          role: "ai",
+          content: "✅ **Resume Updated!**\n\nI've applied your changes. Check the preview to see the updates. Feel free to ask for more modifications!",
+          timestamp: new Date(),
+          type: "success"
+        }
+        setMessages(prev => [...prev, aiMsg])
+      } else {
+        setMessages(prev => [...prev, { role: "ai", content: "❌ Sorry, I couldn't update the resume. Please try rephrasing your request.", timestamp: new Date(), type: "warning" }])
+      }
+    } catch (error) {
+      setMessages(prev => [...prev, { role: "ai", content: "❌ Something went wrong. Please try again.", timestamp: new Date(), type: "warning" }])
+    } finally {
+      setLoading(false)
+      setInstruction("")
+    }
+  }
+
+  async function handleExportLaTeX() {
+    if (!resumeInfo) return
+
+    setLoading(true)
+
+    try {
+      const response = await generateLaTeX(resumeInfo, selectedTemplate)
+      if (response.data) {
+        const blob = new Blob([response.data.latex_code], { type: 'text/plain' })
+        const url = window.URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `resume_${selectedTemplate}.tex`
+        a.click()
+
+        setMessages(prev => [...prev, { role: "ai", content: "📄 **LaTeX Exported!**\n\nYour resume has been downloaded as a `.tex` file. You can edit it in Overleaf or any LaTeX editor.", timestamp: new Date(), type: "info" }])
+      }
+    } catch (error) {
+      setMessages(prev => [...prev, { role: "ai", content: "❌ Failed to generate LaTeX.", timestamp: new Date(), type: "warning" }])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  function handleExampleClick(prompt: string) {
+    setInstruction(prompt)
+  }
 
   return (
     <ProtectedRoute>
-      <div className="dashboard-theme">
+      <div className="dashboard-theme min-h-screen bg-background">
         <DynamicNavbar />
-        <main className="min-h-screen bg-background pt-28 pb-20">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            {/* Header */}
-            <section className="mb-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <div className="flex items-center gap-3 mb-2">
-                    <FileText className="w-8 h-8 text-primary" />
-                    <h1 className="text-4xl font-bold">Resume Builder</h1>
-                  </div>
-                  <p className="text-muted-foreground">
-                    AI-powered resume analysis and optimization recommendations
-                  </p>
-                </div>
-                <div className="flex gap-2">
-                  <Button variant="outline" className="gap-2">
-                    <Upload className="w-4 h-4" />
-                    Upload Resume
-                  </Button>
-                  <Button className="gap-2 bg-primary hover:bg-primary/90">
-                    <Download className="w-4 h-4" />
-                    Download
-                  </Button>
-                </div>
-              </div>
+        <main className="pt-20 pb-4 px-4 sm:px-6 lg:px-8 max-w-[1800px] mx-auto w-full" style={{ height: 'calc(100vh - 0px)' }}>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full">
 
-              {/* Resume Strength Score */}
-              <Card className="p-8 border-border/40 bg-card/50 backdrop-blur-sm mb-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <h2 className="text-2xl font-bold mb-2 text-foreground">Resume Strength</h2>
-                    <p className="text-muted-foreground mb-4">
-                      Your resume scores {resumeScore}% - Strong foundation with room for optimization
-                    </p>
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-2">
-                        <TrendingUp className="w-5 h-5 text-emerald-500" />
-                        <span className="text-sm text-muted-foreground">+5% this week</span>
-                      </div>
-                      <Badge className="bg-emerald-500/20 text-emerald-600">
-                        Top 15% of candidates
-                      </Badge>
-                    </div>
+            {/* Left Panel: Resume Preview (8 cols) */}
+            <div className="lg:col-span-8 flex flex-col gap-4 h-full min-h-0">
+              {/* Header Bar */}
+              <Card className="flex-shrink-0 p-4 border-border/40 bg-card/50 backdrop-blur-sm">
+                <div className="flex flex-wrap items-center justify-between gap-4">
+                  <div className="flex items-center gap-4">
+                    <FileText className="w-5 h-5 text-primary" />
+                    <h2 className="font-semibold hidden sm:block">Resume Preview</h2>
+                    <div className="h-6 w-px bg-border/50 hidden sm:block" />
+                    <Tabs value={selectedTemplate} onValueChange={(v) => setSelectedTemplate(v as any)}>
+                      <TabsList>
+                        <TabsTrigger value="modern">Modern</TabsTrigger>
+                        <TabsTrigger value="classic">Classic</TabsTrigger>
+                        <TabsTrigger value="minimal">Minimal</TabsTrigger>
+                      </TabsList>
+                    </Tabs>
                   </div>
-                  <div className="relative w-32 h-32">
-                    <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
-                      <circle
-                        cx="50"
-                        cy="50"
-                        r="45"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="6"
-                        className="text-border"
-                      />
-                      <circle
-                        cx="50"
-                        cy="50"
-                        r="45"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="6"
-                        className="text-primary"
-                        strokeDasharray={`${(resumeScore / 100) * 282.7} 282.7`}
-                      />
-                    </svg>
-                    <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <span className="text-3xl font-bold text-foreground">{resumeScore}</span>
-                      <span className="text-xs text-muted-foreground">/ 100</span>
+                  <div className="flex items-center gap-2">
+                    {/* Resume Stats */}
+                    {resumeInfo && (
+                      <div className="hidden md:flex items-center gap-2 mr-4">
+                        <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20">
+                          <TrendingUp className="w-3 h-3 mr-1" />
+                          ATS: {resumeInfo.ats_score || 'N/A'}%
+                        </Badge>
+                        <Badge variant="outline" className="bg-blue-500/10 text-blue-600 border-blue-500/20">
+                          <CheckCircle className="w-3 h-3 mr-1" />
+                          Complete: {resumeInfo.completeness_score || 'N/A'}%
+                        </Badge>
+                      </div>
+                    )}
+
+                    {/* Zoom Controls */}
+                    <div className="flex items-center gap-1 bg-muted/50 rounded-md px-2 py-1">
+                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setZoom(Math.max(0.5, zoom - 0.1))}>-</Button>
+                      <span className="text-xs w-8 text-center">{Math.round(zoom * 100)}%</span>
+                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setZoom(Math.min(1.2, zoom + 0.1))}>+</Button>
                     </div>
+
+                    <Button variant="outline" size="sm" onClick={handleExportLaTeX} disabled={loading || !resumeInfo}>
+                      <Code className="w-4 h-4 mr-2" />
+                      LaTeX
+                    </Button>
+                    <Button size="sm" onClick={() => handlePrint()} disabled={!resumeInfo || loading}>
+                      <Download className="w-4 h-4 mr-2" />
+                      PDF
+                    </Button>
                   </div>
                 </div>
               </Card>
-            </section>
 
-            {/* Tabs */}
-            <section className="mb-8">
-              <div className="flex gap-4 border-b border-border mb-6">
-                <button
-                  onClick={() => setActiveTab("improvements")}
-                  className={`pb-4 font-semibold transition-colors ${
-                    activeTab === "improvements"
-                      ? "text-primary border-b-2 border-primary"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  Improvements ({improvements.length})
-                </button>
-                <button
-                  onClick={() => setActiveTab("strengths")}
-                  className={`pb-4 font-semibold transition-colors ${
-                    activeTab === "strengths"
-                      ? "text-primary border-b-2 border-primary"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  Strengths ({strengths.length})
-                </button>
-              </div>
-
-              <div className="space-y-4">
-                {(activeTab === "improvements" ? improvements : strengths).map((item, idx) => (
-                  <Card
-                    key={idx}
-                    className="p-6 border-border/40 bg-card/50 backdrop-blur-sm hover:bg-card/60 transition-all duration-300"
+              {/* Resume Preview Area */}
+              <div className="flex-1 min-h-0 bg-gray-100/80 rounded-lg border border-border/40 overflow-auto shadow-inner">
+                <div className="min-h-full flex justify-center p-8">
+                  <div
+                    className="transition-transform duration-200 ease-in-out shadow-2xl origin-top"
+                    style={{ transform: `scale(${zoom})`, transformOrigin: 'top center' }}
                   >
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <h3 className="text-xl font-semibold text-foreground">{item.category}</h3>
-                          <Badge
-                            className={
-                              item.status === "strength"
-                                ? "bg-emerald-500/20 text-emerald-600"
-                                : "bg-amber-500/20 text-amber-600"
-                            }
-                          >
-                            {item.score}%
-                          </Badge>
-                        </div>
-                        <p className="text-muted-foreground mb-3">{item.feedback}</p>
-                      </div>
-                      {item.status === "improvement" ? (
-                        <AlertCircle className="w-6 h-6 text-amber-500 flex-shrink-0" />
+                    {resumeInfo ? (
+                      selectedTemplate === "modern" ? (
+                        <ModernTemplate ref={resumeRef} data={resumeInfo} />
+                      ) : selectedTemplate === "classic" ? (
+                        <ClassicTemplate ref={resumeRef} data={resumeInfo} />
                       ) : (
-                        <CheckCircle2 className="w-6 h-6 text-emerald-500 flex-shrink-0" />
-                      )}
-                    </div>
-                    <div
-                      className={`p-4 rounded-lg ${
-                        item.status === "strength"
-                          ? "bg-emerald-500/10 border border-emerald-500/20"
-                          : "bg-amber-500/10 border border-amber-500/20"
-                      }`}
-                    >
-                      <p className="text-sm font-semibold text-foreground mb-1">
-                        {item.status === "strength" ? "✨ Keep doing this" : "💡 Suggestion"}
-                      </p>
-                      <p className="text-sm text-muted-foreground">{item.suggestion}</p>
-                    </div>
-                  </Card>
-                ))}
+                        <MinimalTemplate ref={resumeRef} data={resumeInfo} />
+                      )
+                    ) : (
+                      <div className="flex flex-col items-center justify-center h-[800px] w-[600px] bg-white shadow-sm rounded-lg">
+                        <Loader2 className="w-8 h-8 animate-spin mb-4 text-primary" />
+                        <p className="text-muted-foreground">Loading resume data...</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
-            </section>
+            </div>
+
+            {/* Right Panel: AI Editor (4 cols) */}
+            <Card className="lg:col-span-4 flex flex-col h-full min-h-0 overflow-hidden border-border/40 bg-card/50 backdrop-blur-sm shadow-lg">
+              {/* Header */}
+              <div className="flex-shrink-0 p-4 border-b border-border/40 bg-gradient-to-r from-primary/5 to-purple-500/5">
+                <h2 className="font-semibold flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-primary" />
+                  AI Resume Editor
+                </h2>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Edit your resume with natural language instructions
+                </p>
+              </div>
+
+              {/* Quick Actions */}
+              <div className="flex-shrink-0 p-3 border-b border-border/40 bg-muted/10">
+                <p className="text-xs text-muted-foreground mb-2 font-medium">Quick Actions</p>
+                <div className="flex flex-wrap gap-2">
+                  {QUICK_ACTIONS.map((action) => (
+                    <Button
+                      key={action.action}
+                      variant="outline"
+                      size="sm"
+                      className="text-xs h-8 bg-background/50 hover:bg-background"
+                      onClick={() => handleQuickAction(action.action)}
+                      disabled={loading}
+                    >
+                      <action.icon className={`w-3 h-3 mr-1.5 ${action.color}`} />
+                      {action.label}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Chat Messages */}
+              <ScrollArea className="flex-1 min-h-0 p-4">
+                <div className="space-y-4">
+                  {messages.map((msg, idx) => (
+                    <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                      <div className={`max-w-[90%] rounded-lg p-3 ${msg.role === 'user'
+                        ? 'bg-primary text-primary-foreground'
+                        : msg.type === 'success'
+                          ? 'bg-emerald-500/10 border border-emerald-500/20'
+                          : msg.type === 'warning'
+                            ? 'bg-amber-500/10 border border-amber-500/20'
+                            : 'bg-muted/50 border border-border/50'
+                        }`}>
+                        {msg.role === 'ai' ? (
+                          <div className="prose prose-sm prose-invert max-w-none text-sm">
+                            <ReactMarkdown>{msg.content}</ReactMarkdown>
+                          </div>
+                        ) : (
+                          <p className="text-sm">{msg.content}</p>
+                        )}
+                        <span className="text-[10px] opacity-50 mt-1 block">
+                          {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                  {loading && (
+                    <div className="flex justify-start">
+                      <div className="bg-muted/50 border border-border/50 rounded-lg p-3 flex items-center gap-2">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span className="text-sm">AI is working on your resume...</span>
+                      </div>
+                    </div>
+                  )}
+                  <div ref={chatEndRef} />
+                </div>
+              </ScrollArea>
+
+              {/* Example Prompts */}
+              {messages.length <= 2 && (
+                <div className="flex-shrink-0 p-3 border-t border-border/40 bg-muted/5">
+                  <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
+                    <Lightbulb className="w-3 h-3" />
+                    Try these examples
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {EXAMPLE_PROMPTS.slice(0, 3).map((prompt, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => handleExampleClick(prompt)}
+                        className="text-xs px-2 py-1 rounded-full bg-background/80 border border-border/50 hover:bg-background hover:border-primary/30 transition-colors truncate max-w-full"
+                      >
+                        {prompt.length > 40 ? prompt.slice(0, 40) + '...' : prompt}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Input Area */}
+              <div className="flex-shrink-0 p-4 border-t border-border/40 bg-muted/10">
+                <div className="relative">
+                  <Textarea
+                    placeholder="E.g., 'Add Python to my skills' or 'Make my summary more concise'..."
+                    className="min-h-[80px] pr-12 resize-none bg-background text-foreground caret-primary border-border/50 focus:border-primary/50"
+                    value={instruction}
+                    onChange={(e) => setInstruction(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault()
+                        handleUpdate()
+                      }
+                    }}
+                  />
+                  <Button
+                    size="icon"
+                    className="absolute bottom-3 right-3 h-8 w-8"
+                    onClick={handleUpdate}
+                    disabled={loading || !instruction.trim()}
+                  >
+                    <Send className="w-4 h-4" />
+                  </Button>
+                </div>
+                <p className="text-[10px] text-muted-foreground mt-2 text-center">
+                  Press Enter to send • Shift+Enter for new line
+                </p>
+              </div>
+            </Card>
+
           </div>
         </main>
+
+        {/* Tailor to JD Modal */}
+        <Dialog open={showTailorModal} onOpenChange={setShowTailorModal}>
+          <DialogContent className="sm:max-w-[600px]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Target className="w-5 h-5 text-primary" />
+                Tailor Resume to Job Description
+              </DialogTitle>
+              <DialogDescription>
+                Paste the job description below and AI will optimize your resume to match the requirements, keywords, and skills mentioned in the JD.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-4">
+              <Textarea
+                placeholder="Paste the full job description here..."
+                className="min-h-[200px] resize-none"
+                value={jobDescription}
+                onChange={(e) => setJobDescription(e.target.value)}
+              />
+              <div className="mt-3 p-3 bg-blue-500/5 border border-blue-500/20 rounded-lg">
+                <p className="text-xs text-blue-600 flex items-start gap-2">
+                  <Lightbulb className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                  <span>
+                    <strong>Tip:</strong> Include the full JD with responsibilities, requirements, and preferred qualifications for best results.
+                  </span>
+                </p>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowTailorModal(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleTailorToJD} disabled={!jobDescription.trim() || loading}>
+                {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Sparkles className="w-4 h-4 mr-2" />}
+                Tailor My Resume
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </ProtectedRoute>
   )

@@ -422,4 +422,84 @@ router.delete("/", authenticateToken, async (req, res) => {
     }
 });
 
+/**
+ * @route POST /api/resume/tailor
+ * @desc Tailor resume based on Job Description
+ * @access Private
+ */
+router.post("/tailor", authenticateToken, async (req, res) => {
+    const { jobDescription } = req.body;
+
+    if (!jobDescription) {
+        return res.status(400).json({ error: "Job Description is required" });
+    }
+
+    try {
+        // Get stored resume text
+        const resumeResult = await pool.query(
+            "SELECT resume_text FROM resume_info WHERE user_id = $1",
+            [req.user.id]
+        );
+
+        if (resumeResult.rows.length === 0 || !resumeResult.rows[0].resume_text) {
+            return res.status(404).json({ error: "No resume found. Please upload a resume first." });
+        }
+
+        const resumeText = resumeResult.rows[0].resume_text;
+
+        console.log("Tailoring resume...");
+        const tailoredResult = await resumeService.tailorResume(resumeText, jobDescription);
+
+        res.json(tailoredResult);
+
+    } catch (error) {
+        console.error("Error tailoring resume:", error);
+        res.status(500).json({ error: "Failed to tailor resume", details: error.message });
+    }
+});
+
+/**
+ * @route POST /api/resume/update
+ * @desc Update resume data based on instruction
+ * @access Private
+ */
+router.post("/update", authenticateToken, async (req, res) => {
+    const { currentData, instruction } = req.body;
+
+    if (!instruction) {
+        return res.status(400).json({ error: "Instruction is required" });
+    }
+
+    try {
+        console.log("Updating resume based on instruction...");
+        const updatedData = await resumeService.updateResume(currentData, instruction);
+        res.json(updatedData);
+    } catch (error) {
+        console.error("Error updating resume:", error);
+        res.status(500).json({ error: "Failed to update resume", details: error.message });
+    }
+});
+
+/**
+ * @route POST /api/resume/generate-latex
+ * @desc Generate LaTeX code for resume
+ * @access Private
+ */
+router.post("/generate-latex", authenticateToken, async (req, res) => {
+    const { data, template } = req.body;
+
+    if (!data) {
+        return res.status(400).json({ error: "Resume data is required" });
+    }
+
+    try {
+        console.log(`Generating LaTeX for template: ${template}...`);
+        const latexCode = await resumeService.generateLaTeX(data, template);
+        res.json({ latex_code: latexCode });
+    } catch (error) {
+        console.error("Error generating LaTeX:", error);
+        res.status(500).json({ error: "Failed to generate LaTeX", details: error.message });
+    }
+});
+
 module.exports = router;

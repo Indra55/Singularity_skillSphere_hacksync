@@ -418,6 +418,103 @@ Provide exactly 5 recommended career paths, 4 trending roles, 3 fast-growing ind
       };
     }
   }
+  /**
+   * Update resume data based on user instruction
+   */
+  async updateResume(currentData, instruction) {
+    const prompt = `You are an expert resume editor. Update the following resume JSON based on the user's instruction.
+    
+    Current Resume JSON:
+    ${JSON.stringify(currentData).substring(0, 15000)}
+    
+    User Instruction:
+    "${instruction}"
+    
+    Rules:
+    1. ONLY modify the parts requested by the user.
+    2. Keep the rest of the data exactly the same.
+    3. If the user asks to "improve" or "fix" something, apply best practices.
+    4. Return the FULL updated JSON.
+    
+    Return JSON only.`;
+
+    try {
+      const text = await this.callWithRetry(prompt);
+      return this.safeJsonParse(text, currentData);
+    } catch (error) {
+      console.error('Error updating resume:', error.message);
+      throw new Error('Failed to update resume.');
+    }
+  }
+
+  /**
+   * Generate LaTeX code from resume data
+   */
+  async generateLaTeX(data, templateName = 'classic') {
+    const prompt = `Convert this resume JSON into a professional LaTeX (.tex) resume using a "${templateName}" style.
+    
+    Resume JSON:
+    ${JSON.stringify(data).substring(0, 15000)}
+    
+    Template Style: ${templateName} (modern, classic, or minimal)
+    
+    Rules:
+    1. Use standard LaTeX packages (geometry, enumitem, hyperref).
+    2. Ensure it compiles with pdflatex.
+    3. Make it look professional and clean.
+    4. Return ONLY the raw LaTeX code (no markdown blocks).
+    
+    LaTeX Code:`;
+
+    try {
+      const text = await this.callWithRetry(prompt);
+      // Clean up potential markdown blocks
+      return text.replace(/```latex\n?|\n?```/g, '').trim();
+    } catch (error) {
+      console.error('Error generating LaTeX:', error.message);
+      throw new Error('Failed to generate LaTeX.');
+    }
+  }
+
+  /**
+   * Tailor resume based on Job Description
+   */
+  async tailorResume(resumeText, jobDescription) {
+    const prompt = `You are an expert resume writer. Tailor the following resume to match the provided Job Description (JD).
+    
+    Resume:
+    ${resumeText.substring(0, 10000)}
+    
+    Job Description:
+    ${jobDescription.substring(0, 5000)}
+    
+    Instructions:
+    1. Analyze the JD for keywords and required skills.
+    2. Rewrite the resume summary to align with the JD.
+    3. Highlight relevant skills and experiences in the resume.
+    4. Use strong action verbs.
+    5. Keep the structure similar but optimized.
+    6. Return the FULL resume in Markdown format.
+    
+    Return JSON:
+    {
+      "tailored_resume_markdown": "The full tailored resume in Markdown format",
+      "changes_made": ["Change 1", "Change 2"],
+      "match_score_improvement": "From 70% to 95%"
+    }`;
+
+    try {
+      const text = await this.callWithRetry(prompt);
+      return this.safeJsonParse(text, {
+        tailored_resume_markdown: resumeText,
+        changes_made: [],
+        match_score_improvement: "Unknown"
+      });
+    } catch (error) {
+      console.error('Error tailoring resume:', error.message);
+      throw new Error('Failed to tailor resume.');
+    }
+  }
 }
 
 module.exports = new EnhancedResumeService();

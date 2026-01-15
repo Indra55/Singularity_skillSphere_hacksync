@@ -6,8 +6,14 @@ const cors = require("cors")
 require("dotenv").config()
 
 // CORS configuration - allow frontend to communicate with backend
+const allowedOrigins = [
+    "http://localhost:3000",
+    "https://singularity-skill-sphere-hacksync.vercel.app",
+    process.env.FRONTEND_URL
+].filter((origin, index, self) => origin && self.indexOf(origin) === index);
+
 const corsOptions = {
-    origin: process.env.FRONTEND_URL || "http://localhost:3000",
+    origin: allowedOrigins,
     credentials: true, // Allow cookies to be sent
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
@@ -28,7 +34,7 @@ app.use((err, req, res, next) => {
         });
     }
     next();
-});  
+});
 
 app.use(cookieParser())
 
@@ -67,7 +73,7 @@ const { Server } = require("socket.io")
 const server = http.createServer(app)
 const io = new Server(server, {
     cors: {
-        origin: "http://localhost:3000",
+        origin: allowedOrigins,
         methods: ["GET", "POST"],
     },
 })
