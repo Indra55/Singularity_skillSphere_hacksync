@@ -3,7 +3,7 @@
  * Handles all communication with the backend server
  */
 
-const API_BASE_URL = "";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
 interface ApiResponse<T = unknown> {
     data?: T;
