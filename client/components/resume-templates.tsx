@@ -59,7 +59,9 @@ export const ModernTemplate = forwardRef<HTMLDivElement, TemplateProps>(({ data 
                                         </div>
                                         <p className="text-gray-600 text-xs mt-1">{proj.description}</p>
                                         {proj.technologies && (
-                                            <div className="text-xs text-gray-500 mt-1 italic">Tech: {proj.technologies.join(", ")}</div>
+                                            <div className="text-xs text-gray-500 mt-1 italic">
+                                                Tech: {Array.isArray(proj.technologies) ? proj.technologies.join(", ") : proj.technologies}
+                                            </div>
                                         )}
                                     </div>
                                 ))}
@@ -175,7 +177,9 @@ export const ClassicTemplate = forwardRef<HTMLDivElement, TemplateProps>(({ data
                                     </div>
                                     <p className="text-sm text-justify leading-snug">{proj.description}</p>
                                     {proj.technologies && (
-                                        <p className="text-xs italic mt-1">Technologies: {proj.technologies.join(", ")}</p>
+                                        <p className="text-xs italic mt-1">
+                                            Technologies: {Array.isArray(proj.technologies) ? proj.technologies.join(", ") : proj.technologies}
+                                        </p>
                                     )}
                                 </div>
                             ))}
@@ -260,8 +264,8 @@ export const MinimalTemplate = forwardRef<HTMLDivElement, TemplateProps>(({ data
                                     <p className="text-xs text-gray-500 mb-2">{proj.description}</p>
                                     {proj.technologies && (
                                         <div className="flex flex-wrap gap-1">
-                                            {proj.technologies.map((t, j) => (
-                                                <span key={j} className="text-[10px] bg-white px-2 py-1 rounded border border-gray-100">{t}</span>
+                                            {(Array.isArray(proj.technologies) ? proj.technologies : (typeof proj.technologies === 'string' ? (proj.technologies as string).split(',') : [])).map((t, j) => (
+                                                <span key={j} className="text-[10px] bg-white px-2 py-1 rounded border border-gray-100">{t.trim()}</span>
                                             ))}
                                         </div>
                                     )}

@@ -60,6 +60,7 @@ import {
   Cpu,
   MapPin,
   Layers,
+  ArrowRight,
 } from "lucide-react"
 import { useEffect, useState, useCallback } from "react"
 import { useRouter } from "next/navigation"
@@ -553,7 +554,7 @@ export default function DashboardPage() {
                                   <h4 className="font-bold text-foreground text-sm">{role.title}</h4>
                                   <div className="flex items-center gap-2 mt-1 mb-2">
                                     <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${role.demand_level === 'Very High' ? 'bg-red-500/10 text-red-600' :
-                                        'bg-orange-500/10 text-orange-600'
+                                      'bg-orange-500/10 text-orange-600'
                                       }`}>
                                       {role.demand_level} Demand
                                     </span>
@@ -574,64 +575,72 @@ export default function DashboardPage() {
                 <section className="mt-10 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-300">
                   <h3 className="text-2xl font-bold mb-6 text-foreground">Your Next Steps</h3>
                   <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
-                    <Card
-                      className="p-6 border border-border/50 bg-card/60 hover:bg-card/80 transition-colors cursor-pointer flex items-start gap-5 rounded-2xl shadow-sm"
-                      onClick={() => router.push("/resume-builder")}
-                    >
-                      <div className="flex-shrink-0 w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
-                        <span className="text-primary font-bold text-xl">1</span>
+                    <Card className="p-6 border border-border/50 bg-card/60 transition-colors flex flex-col gap-4 rounded-2xl shadow-sm">
+                      <div className="flex items-start gap-5">
+                        <div className="flex-shrink-0 w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
+                          <span className="text-primary font-bold text-xl">1</span>
+                        </div>
+                        <div>
+                          <p className="text-lg font-semibold text-foreground">Build Your Targeted Resume</p>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            Create a personalized resume for your designated job role
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-lg font-semibold text-foreground">Build Your Targeted Resume</p>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          Create a personalized resume for your designated job role
-                        </p>
-                      </div>
+                      <Button className="w-full mt-auto gap-2" onClick={() => router.push("/resume-builder")}>
+                        Start Building <ArrowRight className="w-4 h-4" />
+                      </Button>
                     </Card>
 
-                    <Card
-                      className="p-6 border border-border/50 bg-card/60 hover:bg-card/80 transition-colors cursor-pointer flex items-start gap-5 rounded-2xl shadow-sm"
-                      onClick={() => router.push("/portfolio")}
-                    >
-                      <div className="flex-shrink-0 w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
-                        <span className="text-primary font-bold text-xl">2</span>
+                    <Card className="p-6 border border-border/50 bg-card/60 transition-colors flex flex-col gap-4 rounded-2xl shadow-sm">
+                      <div className="flex items-start gap-5">
+                        <div className="flex-shrink-0 w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
+                          <span className="text-primary font-bold text-xl">2</span>
+                        </div>
+                        <div>
+                          <p className="text-lg font-semibold text-foreground">Build Your Portfolio</p>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            Create 2-3 projects showcasing your best work
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-lg font-semibold text-foreground">Build Your Portfolio</p>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          Create 2-3 projects showcasing your best work
-                        </p>
-                      </div>
+                      <Button className="w-full mt-auto gap-2" variant="outline" onClick={() => router.push("/portfolio")}>
+                        Create Portfolio <ArrowRight className="w-4 h-4" />
+                      </Button>
                     </Card>
 
-                    <Card
-                      className="p-6 border border-border/50 bg-card/60 hover:bg-card/80 transition-colors cursor-pointer flex items-start gap-5 rounded-2xl shadow-sm"
-                      onClick={() => router.push("/interview")}
-                    >
-                      <div className="flex-shrink-0 w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
-                        <span className="text-primary font-bold text-xl">3</span>
+                    <Card className="p-6 border border-border/50 bg-card/60 transition-colors flex flex-col gap-4 rounded-2xl shadow-sm">
+                      <div className="flex items-start gap-5">
+                        <div className="flex-shrink-0 w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
+                          <span className="text-primary font-bold text-xl">3</span>
+                        </div>
+                        <div>
+                          <p className="text-lg font-semibold text-foreground">Practice Interviews</p>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            Practice mock interviews before real ones
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-lg font-semibold text-foreground">Practice Interviews</p>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          Practice mock interviews before real ones
-                        </p>
-                      </div>
+                      <Button className="w-full mt-auto gap-2" variant="outline" onClick={() => router.push("/interview")}>
+                        Start Practice <ArrowRight className="w-4 h-4" />
+                      </Button>
                     </Card>
 
-                    <Card
-                      className="p-6 border border-border/50 bg-card/60 hover:bg-card/80 transition-colors cursor-pointer flex items-start gap-5 rounded-2xl shadow-sm"
-                      onClick={() => router.push("/opportunities")}
-                    >
-                      <div className="flex-shrink-0 w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
-                        <span className="text-primary font-bold text-xl">4</span>
+                    <Card className="p-6 border border-border/50 bg-card/60 transition-colors flex flex-col gap-4 rounded-2xl shadow-sm">
+                      <div className="flex items-start gap-5">
+                        <div className="flex-shrink-0 w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
+                          <span className="text-primary font-bold text-xl">4</span>
+                        </div>
+                        <div>
+                          <p className="text-lg font-semibold text-foreground">View Opportunities</p>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            Maximize your opportunities of getting the perfect job
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-lg font-semibold text-foreground">View Opportunities</p>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          Maximize your opportunities of getting the perfect job
-                        </p>
-                      </div>
+                      <Button className="w-full mt-auto gap-2" variant="outline" onClick={() => router.push("/opportunities")}>
+                        Find Jobs <ArrowRight className="w-4 h-4" />
+                      </Button>
                     </Card>
                   </div>
                 </section>

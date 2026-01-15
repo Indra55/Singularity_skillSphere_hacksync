@@ -21,7 +21,7 @@ router.get("/", authenticateToken, async (req, res) => {
     }
 });
 
-/**
+/** 
  * @route POST /api/skills
  * @desc Add skills (can be a single string or an array of strings)
  * @access Private

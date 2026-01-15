@@ -69,6 +69,24 @@ export default function ResumeBuilderPage() {
   }, [])
 
   useEffect(() => {
+    const checkAutoTailor = async () => {
+      const storedJD = localStorage.getItem("tailor_jd")
+      if (storedJD && resumeInfo) {
+        // Clear it immediately so we don't re-trigger
+        localStorage.removeItem("tailor_jd")
+
+        // Set the state for visibility (though we're auto-submitting)
+        setJobDescription(storedJD)
+
+        // Trigger the tailoring
+        await handleTailorToJD(storedJD)
+      }
+    }
+
+    checkAutoTailor()
+  }, [resumeInfo])
+
+  useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages])
 
@@ -96,8 +114,9 @@ export default function ResumeBuilderPage() {
     }
   }
 
-  async function handleTailorToJD() {
-    if (!jobDescription.trim() || !resumeInfo) return
+  async function handleTailorToJD(jd?: string) {
+    const jdToUse = typeof jd === 'string' ? jd : jobDescription
+    if (!jdToUse.trim() || !resumeInfo) return
 
     setShowTailorModal(false)
     const userMsg: Message = { role: "user", content: "🎯 Tailoring resume to job description...", timestamp: new Date() }
@@ -105,9 +124,14 @@ export default function ResumeBuilderPage() {
     setLoading(true)
 
     try {
-      const response = await tailorResume(jobDescription)
+      const response = await tailorResume(jdToUse)
 
       if (response.data) {
+        // Update the resume info with the tailored data
+        if (response.data.tailored_resume_data) {
+          setResumeInfo(response.data.tailored_resume_data)
+        }
+
         // Parse the tailored resume and update the state
         const aiMsg: Message = {
           role: "ai",
@@ -424,7 +448,7 @@ export default function ResumeBuilderPage() {
               <Button variant="outline" onClick={() => setShowTailorModal(false)}>
                 Cancel
               </Button>
-              <Button onClick={handleTailorToJD} disabled={!jobDescription.trim() || loading}>
+              <Button onClick={() => handleTailorToJD()} disabled={!jobDescription.trim() || loading}>
                 {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Sparkles className="w-4 h-4 mr-2" />}
                 Tailor My Resume
               </Button>

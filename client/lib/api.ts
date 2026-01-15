@@ -250,7 +250,7 @@ export async function getResumeInfo(): Promise<ApiResponse<ResumeInfo>> {
 }
 
 export interface TailoredResumeResponse {
-    tailored_resume_markdown: string;
+    tailored_resume_data: ResumeInfo;
     changes_made: string[];
     match_score_improvement: string;
 }

@@ -21,7 +21,7 @@ router.post("/register", async (req, res) => {
 
     // Check if user already exists
     const existingUser = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
-
+ 
     if (existingUser.rows.length > 0) {
       return res.status(409).json({ error: "User with this email already exists" });
     }

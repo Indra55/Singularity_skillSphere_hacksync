@@ -82,7 +82,7 @@ router.post("/linkedin", authenticateToken, async (req, res) => {
         console.log(`Searching for: ${career_goal_short} in ${location}`);
 
         // Check for API key
-        const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY;
+        const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY || 'dcbbcd4b71msh4678aa2113ea60cp1820aajsndf18bdd64b5c';
         const RAPIDAPI_HOST = 'linkedin-job-search-api.p.rapidapi.com';
 
         console.log(`API Key present: ${!!RAPIDAPI_KEY}`);
@@ -91,15 +91,15 @@ router.post("/linkedin", authenticateToken, async (req, res) => {
         if (RAPIDAPI_KEY) {
             // Clean up title - remove hyphens and ensure proper formatting
             const cleanTitle = (career_goal_short || 'Software Engineer').replace(/-/g, ' ');
-            const cleanLocation = location || 'India';
+            const cleanLocation = location || 'United States';
 
             const options = {
                 method: 'GET',
                 url: `https://${RAPIDAPI_HOST}/active-jb-24h`,
                 params: {
-                    title_filter: cleanTitle,
-                    location_filter: cleanLocation,
-                    limit: '20',
+                    title_filter: `"${cleanTitle}"`,
+                    location_filter: `"${cleanLocation}"`,
+                    limit: '10',
                     offset: '0',
                     description_type: 'text'
                 },

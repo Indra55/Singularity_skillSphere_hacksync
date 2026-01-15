@@ -494,11 +494,27 @@ Provide exactly 5 recommended career paths, 4 trending roles, 3 fast-growing ind
     3. Highlight relevant skills and experiences in the resume.
     4. Use strong action verbs.
     5. Keep the structure similar but optimized.
-    6. Return the FULL resume in Markdown format.
+    6. Return the FULL tailored resume as a JSON object.
     
     Return JSON:
     {
-      "tailored_resume_markdown": "The full tailored resume in Markdown format",
+      "tailored_resume_data": {
+        "name": "Full Name",
+        "email": "email@example.com",
+        "phone": "Phone",
+        "location": "Location",
+        "linkedin_url": "URL",
+        "portfolio_url": "URL",
+        "title": "Job Title",
+        "years_of_experience": 0,
+        "professional_summary": "Tailored summary",
+        "technical_skills": ["skill1", "skill2"],
+        "soft_skills": ["skill1", "skill2"],
+        "education": [],
+        "experience": [],
+        "projects": [],
+        "certifications": []
+      },
       "changes_made": ["Change 1", "Change 2"],
       "match_score_improvement": "From 70% to 95%"
     }`;
@@ -506,7 +522,7 @@ Provide exactly 5 recommended career paths, 4 trending roles, 3 fast-growing ind
     try {
       const text = await this.callWithRetry(prompt);
       return this.safeJsonParse(text, {
-        tailored_resume_markdown: resumeText,
+        tailored_resume_data: null,
         changes_made: [],
         match_score_improvement: "Unknown"
       });
