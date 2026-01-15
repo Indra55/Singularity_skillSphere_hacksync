@@ -534,4 +534,71 @@ router.post("/generate-latex", authenticateToken, async (req, res) => {
     }
 });
 
+/**
+ * @route POST /api/resume/chat-insights
+ * @desc Chat with AI about market insights
+ * @access Private
+ */
+router.post("/chat-insights", authenticateToken, async (req, res) => {
+    try {
+        const { query } = req.body;
+
+        if (!query) {
+            return res.status(400).json({ error: "Query is required" });
+        }
+
+        // 1. Fetch User Context
+        const userResult = await pool.query(
+            `SELECT professional_title, years_of_experience, technical_skills, career_insights 
+             FROM resume_info WHERE user_id = $1`,
+            [req.user.id]
+        );
+
+        if (userResult.rows.length === 0) {
+            return res.status(404).json({ error: "Resume data not found" });
+        }
+
+        const profile = userResult.rows[0];
+
+        // Fallback market data if database is empty
+        const fallbackTrendingRoles = [
+            { title: "AI/ML Engineer", demand_level: "Very High", why_trending: "Massive enterprise AI adoption" },
+            { title: "Full-Stack Developer", demand_level: "High", why_trending: "Digital transformation across industries" },
+            { title: "DevOps Engineer", demand_level: "High", why_trending: "Cloud migration and automation needs" },
+            { title: "Data Engineer", demand_level: "High", why_trending: "Big data infrastructure demand" },
+            { title: "Cloud Architect", demand_level: "Very High", why_trending: "Multi-cloud strategy adoption" }
+        ];
+
+        const fallbackIndustries = [
+            { industry: "Technology/SaaS", growth_rate: "25%", fit_for_profile: "High" },
+            { industry: "FinTech", growth_rate: "20%", fit_for_profile: "High" },
+            { industry: "HealthTech", growth_rate: "18%", fit_for_profile: "Medium" },
+            { industry: "E-commerce", growth_rate: "15%", fit_for_profile: "Medium" }
+        ];
+
+        // Prepare Context Object - use fallback if DB is empty
+        const trendingRoles = profile.career_insights?.career_dashboard?.trending_roles_2026;
+        const industries = profile.career_insights?.career_dashboard?.fast_growing_industries;
+
+        const context = {
+            title: profile.professional_title || "Software Developer",
+            years_of_experience: profile.years_of_experience || 0,
+            skills: profile.technical_skills || [],
+            trending_roles: (trendingRoles && trendingRoles.length > 0) ? trendingRoles : fallbackTrendingRoles,
+            fast_growing_industries: (industries && industries.length > 0) ? industries : fallbackIndustries,
+            analysis_summary: profile.career_insights?.career_dashboard?.profile_summary || {},
+            data_source: (trendingRoles && trendingRoles.length > 0) ? "database" : "fallback_2025"
+        };
+
+        // 3. Get AI Response
+        const response = await resumeService.chatWithData(query, context);
+
+        res.json({ response });
+
+    } catch (error) {
+        console.error("Chat insights error:", error);
+        res.status(500).json({ error: "Failed to process chat request" });
+    }
+});
+
 module.exports = router;

@@ -515,6 +515,60 @@ Provide exactly 5 recommended career paths, 4 trending roles, 3 fast-growing ind
       throw new Error('Failed to tailor resume.');
     }
   }
+  /**
+   * INTERACTIVE: Chat with data
+   */
+  async chatWithData(query, context) {
+    // Format the market data nicely for the prompt
+    const rolesFormatted = (context.trending_roles || []).map(r =>
+      `  - ${r.title} (Demand: ${r.demand_level}) - ${r.why_trending || 'High growth'}`
+    ).join('\n');
+
+    const industriesFormatted = (context.fast_growing_industries || []).map(i =>
+      `  - ${i.industry} (Growth: ${i.growth_rate}, Fit: ${i.fit_for_profile})`
+    ).join('\n');
+
+    const prompt = `You are a friendly career advisor helping a job seeker. Answer their question directly.
+
+USER PROFILE:
+- Title: ${context.title || 'Developer'}
+- Experience: ${context.years_of_experience || 0} years
+- Skills: ${Array.isArray(context.skills) ? context.skills.slice(0, 15).join(', ') : context.skills || 'Various'}
+
+MARKET DATA:
+Trending Roles:
+${rolesFormatted || '  - General tech roles in demand'}
+
+Growing Industries:
+${industriesFormatted || '  - Tech sector growing'}
+
+QUESTION: "${query}"
+
+IMPORTANT OUTPUT FORMAT RULES:
+- Write your response as a NORMAL PARAGRAPH with bullet points where helpful
+- DO NOT use JSON format
+- DO NOT wrap response in curly braces {}
+- DO NOT use "analysis:", "reasoning:", or any JSON keys
+- Just write like you're talking to a friend
+- Use **bold** for emphasis and - for bullet points
+- Keep it under 200 words
+
+Example good format:
+"Based on the market data, **AI/ML Engineer** looks like a great fit for you! Here's why:
+- Your Python skills match the high demand
+- The role has Very High demand right now
+I'd recommend focusing on..."
+
+YOUR RESPONSE (plain text only):`;
+
+    try {
+      const text = await this.callWithRetry(prompt);
+      return text;
+    } catch (error) {
+      console.error('Error in chatWithData:', error.message);
+      return "I'm having trouble analyzing the market data right now. Please try again in a moment.";
+    }
+  }
 }
 
 module.exports = new EnhancedResumeService();

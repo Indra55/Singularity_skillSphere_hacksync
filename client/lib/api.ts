@@ -276,6 +276,13 @@ export async function generateLaTeX(data: ResumeInfo, template: string): Promise
     });
 }
 
+export async function chatInsights(query: string): Promise<ApiResponse<{ response: string }>> {
+    return apiRequest<{ response: string }>("/api/resume/chat-insights", {
+        method: "POST",
+        body: JSON.stringify({ query }),
+    });
+}
+
 // ==================== DASHBOARD API ====================
 
 export interface DashboardData {
