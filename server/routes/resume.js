@@ -76,6 +76,13 @@ router.post("/upload", authenticateToken, upload.single("resume"), async (req, r
         const parsedData = await resumeService.parseResumeBasic(resumeText);
         console.log(`AI parsing completed in ${Date.now() - startTime}ms`);
 
+        // Also generate AI insights (ATS score, completeness, strengths, improvement areas)
+        // This runs once during upload and gets cached
+        console.log("Generating AI insights (one-time analysis)...");
+        const analysisStartTime = Date.now();
+        const analysis = await resumeService.analyzeResume(resumeText);
+        console.log(`AI analysis completed in ${Date.now() - analysisStartTime}ms`);
+
         // Prepare data for database
         const technicalSkills = Array.isArray(parsedData.technical_skills)
             ? parsedData.technical_skills.filter(s => typeof s === 'string')
@@ -87,17 +94,27 @@ router.post("/upload", authenticateToken, upload.single("resume"), async (req, r
             ? parsedData.certifications.filter(c => typeof c === 'string')
             : [];
 
-        // Single upsert to resume_info table
+        // Prepare analysis data
+        const completenessScore = Math.min(100, Math.max(0, analysis.completeness_score || 50));
+        const atsScore = Math.min(100, Math.max(0, analysis.ats_compatibility_score || 50));
+        const strengths = Array.isArray(analysis.strengths) ? analysis.strengths : [];
+        const improvementAreas = Array.isArray(analysis.improvement_areas) ? analysis.improvement_areas : [];
+        const missingElements = Array.isArray(analysis.missing_elements) ? analysis.missing_elements : [];
+
+        // Single upsert to resume_info table (now includes AI insights)
         await pool.query(
             `INSERT INTO resume_info (
                 user_id, resume_source, parsed_successfully, resume_text,
                 extracted_name, extracted_email, extracted_phone, extracted_location,
                 linkedin_url, portfolio_url, professional_title, years_of_experience,
                 professional_summary, technical_skills, soft_skills,
-                education, experience, projects, certifications, uploaded_at
+                education, experience, projects, certifications,
+                completeness_score, ats_score, strengths, improvement_areas, missing_elements,
+                uploaded_at
             ) VALUES (
                 $1, $2, true, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 
-                $13::text[], $14::text[], $15::jsonb, $16::jsonb, $17::jsonb, $18::text[], now()
+                $13::text[], $14::text[], $15::jsonb, $16::jsonb, $17::jsonb, $18::text[],
+                $19, $20, $21::text[], $22::text[], $23::text[], now()
             )
             ON CONFLICT (user_id) DO UPDATE SET
                 resume_source = EXCLUDED.resume_source,
@@ -118,6 +135,11 @@ router.post("/upload", authenticateToken, upload.single("resume"), async (req, r
                 experience = EXCLUDED.experience,
                 projects = EXCLUDED.projects,
                 certifications = EXCLUDED.certifications,
+                completeness_score = EXCLUDED.completeness_score,
+                ats_score = EXCLUDED.ats_score,
+                strengths = EXCLUDED.strengths,
+                improvement_areas = EXCLUDED.improvement_areas,
+                missing_elements = EXCLUDED.missing_elements,
                 uploaded_at = now(),
                 updated_at = now()`,
             [
@@ -138,7 +160,12 @@ router.post("/upload", authenticateToken, upload.single("resume"), async (req, r
                 JSON.stringify(parsedData.education || []),
                 JSON.stringify(parsedData.experience || []),
                 JSON.stringify(parsedData.projects || []),
-                certifications
+                certifications,
+                completenessScore,
+                atsScore,
+                strengths,
+                improvementAreas,
+                missingElements
             ]
         );
 
@@ -169,7 +196,12 @@ router.post("/upload", authenticateToken, upload.single("resume"), async (req, r
                 technical_skills_count: technicalSkills.length,
                 soft_skills_count: softSkills.length,
                 education_count: (parsedData.education || []).length,
-                experience_count: (parsedData.experience || []).length
+                experience_count: (parsedData.experience || []).length,
+                // AI Insights (cached during upload)
+                completeness_score: completenessScore,
+                ats_score: atsScore,
+                strengths_count: strengths.length,
+                improvement_areas_count: improvementAreas.length
             },
             endpoints: {
                 get_resume: "/api/resume/info",

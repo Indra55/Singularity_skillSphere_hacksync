@@ -5,7 +5,17 @@ import { ProtectedRoute } from "@/components/protected-route"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Bell, Linkedin, MapPin, Briefcase, DollarSign, Star, ExternalLink, Settings } from "lucide-react"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { Bell, Linkedin, MapPin, Briefcase, DollarSign, Star, ExternalLink, Settings, CheckCircle2 } from "lucide-react"
 import { useState, useEffect } from "react"
 import { useAuth } from "@/lib/auth-context"
 import "@/app/dashboard/dashboard.css"
@@ -27,13 +37,17 @@ export default function LinkedInJobsPage() {
   const { user } = useAuth()
   const [notifications, setNotifications] = useState<JobNotification[]>([])
   const [loading, setLoading] = useState(true)
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [selectedJob, setSelectedJob] = useState<JobNotification | null>(null)
+  const [appliedJobs, setAppliedJobs] = useState<Set<string>>(new Set())
+  const [savingApplication, setSavingApplication] = useState(false)
 
   useEffect(() => {
     const fetchJobs = async () => {
       try {
         setLoading(true)
         console.log("Frontend: Fetching jobs from /api/jobs/linkedin")
-        
+
         const res = await fetch("/api/jobs/linkedin", {
           method: "POST",
           headers: {
@@ -44,11 +58,11 @@ export default function LinkedInJobsPage() {
         console.log("Frontend: Response status:", res.status, res.statusText)
 
         if (!res.ok) {
-            const errorText = await res.text();
-            console.error("Frontend: Response error text:", errorText);
-            throw new Error(`Failed to fetch jobs: ${res.status} ${res.statusText}`)
+          const errorText = await res.text();
+          console.error("Frontend: Response error text:", errorText);
+          throw new Error(`Failed to fetch jobs: ${res.status} ${res.statusText}`)
         }
-        
+
         const data = await res.json()
         console.log("Frontend: Received data:", data)
         setNotifications(data.jobs || [])
@@ -62,10 +76,59 @@ export default function LinkedInJobsPage() {
     if (user) {
       fetchJobs()
     } else {
-        setLoading(false) 
+      setLoading(false)
     }
   }, [user])
 
+  const handleApplyClick = (job: JobNotification) => {
+    // Open LinkedIn in a new tab
+    if (job.url) {
+      window.open(job.url, '_blank', 'noopener,noreferrer')
+    }
+    // Set the selected job and open the dialog
+    setSelectedJob(job)
+    setDialogOpen(true)
+  }
+
+  const handleConfirmApplication = async () => {
+    if (!selectedJob) return
+
+    setSavingApplication(true)
+    try {
+      const res = await fetch("/api/jobs/applications", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          job_id: selectedJob.id,
+          job_title: selectedJob.title,
+          company: selectedJob.company,
+          location: selectedJob.location,
+          job_url: selectedJob.url,
+        }),
+      })
+
+      if (res.ok) {
+        // Add to applied jobs set to show visual feedback
+        setAppliedJobs(prev => new Set(prev).add(selectedJob.id))
+        console.log("Application saved successfully")
+      } else {
+        console.error("Failed to save application")
+      }
+    } catch (error) {
+      console.error("Error saving application:", error)
+    } finally {
+      setSavingApplication(false)
+      setDialogOpen(false)
+      setSelectedJob(null)
+    }
+  }
+
+  const handleCancelDialog = () => {
+    setDialogOpen(false)
+    setSelectedJob(null)
+  }
 
   const stats = {
     total: notifications.length,
@@ -144,59 +207,99 @@ export default function LinkedInJobsPage() {
             {/* Job Notifications */}
             <section className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-100">
               {loading ? (
-                 <div className="text-center py-10">
-                    <p className="text-muted-foreground">Finding the best opportunities for you...</p>
-                 </div>
+                <div className="text-center py-10">
+                  <p className="text-muted-foreground">Finding the best opportunities for you...</p>
+                </div>
               ) : notifications.length > 0 ? (
                 notifications.map((job) => (
-                    <Card
-                      key={job.id}
-                      className="p-6 border-border/40 bg-card/50 backdrop-blur-sm hover:bg-card/60 transition-all duration-300"
-                    >
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-2">
-                            <h3 className="text-xl font-semibold text-foreground">{job.title}</h3>
-                            <Badge className={typeColors[job.type] || "bg-secondary"}>{job.type}</Badge>
-                            <Badge className="bg-primary/20 text-primary">{job.match}% match</Badge>
-                          </div>
-                          <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
-                            <div className="flex items-center gap-1">
-                              <Briefcase className="w-4 h-4" />
-                              {job.company}
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <MapPin className="w-4 h-4" />
-                              {job.location}
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <DollarSign className="w-4 h-4" />
-                              {job.salary}
-                            </div>
-                          </div>
-                          <p className="text-muted-foreground mb-3">{job.description}</p>
-                          <p className="text-xs text-muted-foreground">Posted {job.posted}</p>
+                  <Card
+                    key={job.id}
+                    className="p-6 border-border/40 bg-card/50 backdrop-blur-sm hover:bg-card/60 transition-all duration-300"
+                  >
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <h3 className="text-xl font-semibold text-foreground">{job.title}</h3>
+                          <Badge className={typeColors[job.type] || "bg-secondary"}>{job.type}</Badge>
+                          <Badge className="bg-primary/20 text-primary">{job.match}% match</Badge>
+                          {appliedJobs.has(job.id) && (
+                            <Badge className="bg-emerald-500/20 text-emerald-600 gap-1">
+                              <CheckCircle2 className="w-3 h-3" />
+                              Applied
+                            </Badge>
+                          )}
                         </div>
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
+                          <div className="flex items-center gap-1">
+                            <Briefcase className="w-4 h-4" />
+                            {job.company}
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <MapPin className="w-4 h-4" />
+                            {job.location}
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <DollarSign className="w-4 h-4" />
+                            {job.salary}
+                          </div>
+                        </div>
+                        <p className="text-muted-foreground mb-3">{job.description}</p>
+                        <p className="text-xs text-muted-foreground">Posted {job.posted}</p>
                       </div>
-                      <div className="flex gap-2 mt-4">
-                        <Button variant="outline" className="flex-1" asChild>
-                          <a href={job.url || "#"} target="_blank" rel="noopener noreferrer">
-                            View on LinkedIn
-                            <ExternalLink className="w-4 h-4 ml-2" />
-                          </a>
-                        </Button>
-                        <Button className="flex-1 bg-primary hover:bg-primary/90">Apply Now</Button>
-                      </div>
-                    </Card>
+                    </div>
+                    <div className="flex gap-2 mt-4">
+                      <Button
+                        className="flex-1 bg-primary hover:bg-primary/90"
+                        onClick={() => handleApplyClick(job)}
+                      >
+                        Apply Now
+                        <ExternalLink className="w-4 h-4 ml-2" />
+                      </Button>
+                    </div>
+                  </Card>
                 ))
               ) : (
                 <div className="text-center py-10">
-                    <p className="text-muted-foreground">No jobs found matching your profile.</p>
+                  <p className="text-muted-foreground">No jobs found matching your profile.</p>
                 </div>
               )}
             </section>
           </div>
         </main>
+
+        {/* Application Confirmation Dialog */}
+        <AlertDialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <AlertDialogContent className="bg-card border-border">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="text-xl">Did you apply for this job?</AlertDialogTitle>
+              <AlertDialogDescription asChild>
+                <div className="text-muted-foreground">
+                  {selectedJob && (
+                    <div className="mt-2 p-4 bg-secondary/30 rounded-lg">
+                      <p className="font-semibold text-foreground">{selectedJob.title}</p>
+                      <p className="text-sm">{selectedJob.company} • {selectedJob.location}</p>
+                    </div>
+                  )}
+                  <p className="mt-4">
+                    If you applied, we&apos;ll track this application to help you stay organized.
+                  </p>
+                </div>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={handleCancelDialog} disabled={savingApplication}>
+                No, I didn&apos;t apply
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleConfirmApplication}
+                disabled={savingApplication}
+                className="bg-primary hover:bg-primary/90"
+              >
+                {savingApplication ? "Saving..." : "Yes, I applied!"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </ProtectedRoute>
   )

@@ -374,21 +374,64 @@ function generateSuggestions(breakdown, skills, education, experience, preferenc
 // Update user profile
 router.put("/me", authenticateToken, async (req, res) => {
   try {
-    const { username, phone, location, proficiency_level, preferred_work_mode, availability_timeline, career_goal_short, career_goal_long } = req.body;
+    const {
+      username,
+      name,
+      email,
+      phone,
+      location,
+      age,
+      proficiency_level,
+      preferred_work_mode,
+      availability_timeline,
+      career_goal_short,
+      career_goal_long
+    } = req.body;
+
+    // If email is being changed, check if it already exists
+    if (email) {
+      const existingEmail = await pool.query(
+        "SELECT id FROM users WHERE email = $1 AND id != $2",
+        [email, req.user.id]
+      );
+      if (existingEmail.rows.length > 0) {
+        return res.status(409).json({ error: "Email already in use by another account" });
+      }
+    }
+
+    // Helper to convert empty strings to null to avoid constraint violations
+    const sanitize = (val) => (val === "" ? null : val);
 
     const result = await pool.query(
       `UPDATE users SET 
         username = COALESCE($1, username),
-        phone = COALESCE($2, phone),
-        location = COALESCE($3, location),
-        proficiency_level = COALESCE($4, proficiency_level),
-        preferred_work_mode = COALESCE($5, preferred_work_mode),
-        availability_timeline = COALESCE($6, availability_timeline),
-        career_goal_short = COALESCE($7, career_goal_short),
-        career_goal_long = COALESCE($8, career_goal_long),
+        name = COALESCE($2, name),
+        email = COALESCE($3, email),
+        phone = COALESCE($4, phone),
+        location = COALESCE($5, location),
+        age = COALESCE($6, age),
+        proficiency_level = COALESCE($7, proficiency_level),
+        preferred_work_mode = COALESCE($8, preferred_work_mode),
+        availability_timeline = COALESCE($9, availability_timeline),
+        career_goal_short = COALESCE($10, career_goal_short),
+        career_goal_long = COALESCE($11, career_goal_long),
         updated_at = now()
-      WHERE id = $9 RETURNING id, username, email, phone, location, proficiency_level, preferred_work_mode, availability_timeline, career_goal_short, career_goal_long`,
-      [username, phone, location, proficiency_level, preferred_work_mode, availability_timeline, career_goal_short, career_goal_long, req.user.id]
+      WHERE id = $12 
+      RETURNING id, username, name, email, phone, location, age, proficiency_level, preferred_work_mode, availability_timeline, career_goal_short, career_goal_long`,
+      [
+        username,
+        name,
+        email,
+        phone,
+        location,
+        age,
+        sanitize(proficiency_level),
+        sanitize(preferred_work_mode),
+        availability_timeline,
+        career_goal_short,
+        career_goal_long,
+        req.user.id
+      ]
     );
 
     res.json({

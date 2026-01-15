@@ -135,3 +135,28 @@ CREATE TABLE resume_metadata (
 CREATE INDEX idx_users_email ON users(email);
 CREATE INDEX idx_skills_user_id ON skills(user_id);
 CREATE INDEX idx_skills_embedding ON skills USING ivfflat (embedding vector_cosine_ops);
+
+
+
+
+CREATE TABLE job_applications (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    job_id VARCHAR(255) NOT NULL,
+    job_title VARCHAR(500) NOT NULL,
+    company VARCHAR(500),
+    location VARCHAR(255),
+    job_url TEXT,
+    applied_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    status VARCHAR(50) DEFAULT 'applied',
+    notes TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Index for faster queries
+CREATE INDEX idx_job_applications_user_id ON job_applications(user_id);
+CREATE INDEX idx_job_applications_applied_at ON job_applications(applied_at DESC);
+
+-- Prevent duplicate applications
+CREATE UNIQUE INDEX idx_job_applications_unique ON job_applications(user_id, job_id);

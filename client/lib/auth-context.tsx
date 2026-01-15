@@ -16,6 +16,8 @@ type User = {
   location?: string
   age?: number
   proficiency_level?: string
+  preferred_work_mode?: string
+  availability_timeline?: string
   career_goal_short?: string
   career_goal_long?: string
   onboarding_completed?: boolean
@@ -60,6 +62,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           location: apiUser.location,
           age: apiUser.age,
           proficiency_level: apiUser.proficiency_level,
+          preferred_work_mode: apiUser.preferred_work_mode,
+          availability_timeline: apiUser.availability_timeline,
           career_goal_short: apiUser.career_goal_short,
           career_goal_long: apiUser.career_goal_long,
           onboarding_completed: apiUser.onboarding_completed,
