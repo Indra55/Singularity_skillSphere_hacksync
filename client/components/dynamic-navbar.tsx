@@ -33,7 +33,7 @@ const moreNavItems = [
   { label: "Opportunities", href: "/opportunities", icon: Users },
   { label: "Trends", href: "/job-trends", icon: TrendIcon },
   { label: "Jobs", href: "/linkedin-jobs", icon: Bell },
-  // { label: "Code", href: "/coding-practice", icon: Code },
+  { label: "Code", href: "/coding-practice", icon: Code },
   { label: "Peer Learning", href: "/peer-learning", icon: Users },
 
 ]

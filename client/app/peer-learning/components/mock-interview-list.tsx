@@ -24,7 +24,7 @@ export function MockInterviewList() {
     try {
       setLoading(true)
 
-      const res = await fetch(`${process.env.NEXT_PUBLIC_ML_API_URL || 'http://localhost:5000'}/api/rooms`).catch(() => null)
+      const res = await fetch(`${process.env.NEXT_PUBLIC_ML_API_URL || 'https://hacksyncinterview.onrender.com'}/api/rooms`).catch(() => null)
 
       if (!res || !res.ok) {
         // Fallback for demonstration if service is offline
