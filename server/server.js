@@ -46,7 +46,7 @@ app.use("/api/profile", require("./routes/profile"))
 app.use("/api/recommendations", require("./routes/recommendations"))
 app.use("/api/skills", require("./routes/skills"))
 app.use("/api/resume", require("./routes/resume"))
-
+app.use("/api/planner", require("./routes/planner"))
 // Health check endpoint
 app.get("/", (req, res) => {
     res.json({
