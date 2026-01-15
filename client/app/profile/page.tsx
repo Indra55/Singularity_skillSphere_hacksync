@@ -138,7 +138,12 @@ export default function ProfilePage() {
   useEffect(() => {
     async function fetchApplications() {
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/jobs/applications`)
+        const token = localStorage.getItem("token")
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/jobs/applications`, {
+          headers: {
+            "Authorization": `Bearer ${token}`
+          }
+        })
         if (res.ok) {
           const data = await res.json()
           setApplications(data.applications || [])
