@@ -29,6 +29,9 @@ curl -X GET http://localhost:5555/api/users/me -b cookies.txt
 3. [Posts](#posts)
 4. [Comments](#comments)
 5. [Voting](#voting)
+6. [Onboarding](#onboarding)
+7. [Profile Enrichment](#profile-enrichment)
+8. [Recommendations](#recommendations)
 
 ---
 
@@ -508,3 +511,142 @@ You can also use the token from the login response as a Bearer token (requires a
 | POST | `/api/posts/:id/downvote` | Yes | Downvote post |
 | GET | `/api/posts/:id/comments` | No | Get comments |
 | POST | `/api/posts/:id/comments` | Yes | Add comment |
+| POST | `/api/onboarding/basic-info` | Yes | Step 1: Basic Info |
+| POST | `/api/onboarding/career-goals` | Yes | Step 2: Career Info |
+| POST | `/api/onboarding/skills` | Yes | Step 3: Skills |
+| POST | `/api/onboarding/resume` | Yes | Optional: Resume Upload |
+
+---
+
+## Onboarding
+
+### 1. Step 1: Basic Info
+```bash
+curl -X POST http://localhost:5555/api/onboarding/basic-info \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "John Doe",
+    "phone": "+1234567890",
+    "age": 25,
+    "gender": "male",
+    "location": "New York, USA"
+  }' \
+  -b cookies.txt \
+  -v
+```
+
+### 2. Step 2: Career Info
+```bash
+curl -X POST http://localhost:5555/api/onboarding/career-goals \
+  -H "Content-Type: application/json" \
+  -d '{
+    "role": "Full Stack Developer",
+    "status": "intermediate"
+  }' \
+  -b cookies.txt \
+  -v
+```
+
+### 3. Step 3: Skills
+```bash
+curl -X POST http://localhost:5555/api/onboarding/skills \
+  -H "Content-Type: application/json" \
+  -d '{
+    "skills": ["Node.js", "React", "PostgreSQL"]
+  }' \
+  -b cookies.txt \
+  -v
+```
+
+### 4. Optional: Resume Upload
+```bash
+curl -X POST http://localhost:5555/api/onboarding/resume \
+  -F "resume=@/path/to/your/resume.pdf" \
+  -b cookies.txt \
+  -v
+```
+
+---
+
+## Profile Enrichment
+
+### 1. Add Education
+```bash
+curl -X POST http://localhost:5555/api/profile/education \
+  -H "Content-Type: application/json" \
+  -d '{
+    "degree": "Bachelor of Science",
+    "major": "Computer Science",
+    "institution": "Tech University",
+    "graduation_year": 2024
+  }' \
+  -b cookies.txt \
+  -v
+```
+
+### 2. Add Experience
+```bash
+curl -X POST http://localhost:5555/api/profile/experience \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Software Intern",
+    "organization": "Code Corp",
+    "description": "Worked on backend APIs",
+    "start_date": "2023-06-01",
+    "end_date": "2023-08-31"
+  }' \
+  -b cookies.txt \
+  -v
+```
+
+### 3. Add Skills (Simplified)
+```bash
+# Add a single skill
+curl -X POST http://localhost:5555/api/skills \
+  -H "Content-Type: application/json" \
+  -d '{
+    "skills": "JavaScript"
+  }' \
+  -b cookies.txt \
+  -v
+
+# Add multiple skills at once
+curl -X POST http://localhost:5555/api/skills \
+  -H "Content-Type: application/json" \
+  -d '{
+    "skills": ["Node.js", "React", "PostgreSQL"]
+  }' \
+  -b cookies.txt \
+  -v
+```
+
+### 4. Get My Skills
+```bash
+curl -X GET http://localhost:5555/api/skills \
+  -b cookies.txt \
+  -v
+```
+
+### 4. Update Preferences
+```bash
+curl -X POST http://localhost:5555/api/profile/preferences \
+  -H "Content-Type: application/json" \
+  -d '{
+    "interests": ["AI", "Web Dev"],
+    "preferred_roles": ["Backend Engineer"],
+    "industry_preferences": ["Fintech", "Healthtech"]
+  }' \
+  -b cookies.txt \
+  -v
+```
+
+---
+
+## Recommendations
+
+### 1. Get Career Recommendations
+```bash
+curl -X GET http://localhost:5555/api/recommendations/career \
+  -b cookies.txt \
+  -v
+```
