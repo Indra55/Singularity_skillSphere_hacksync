@@ -105,9 +105,9 @@ export default function AuthPage() {
           )}
 
           {authMode === "signup" && (
-            <SignUpForm 
-                onBack={() => setAuthMode("select")} 
-                onSwitchToLogin={() => setAuthMode("login")}
+            <SignUpForm
+              onBack={() => setAuthMode("select")}
+              onSwitchToLogin={() => setAuthMode("login")}
             />
           )}
 
@@ -158,52 +158,40 @@ function SignUpForm({ onBack, onSwitchToLogin }: { onBack: () => void, onSwitchT
     }
 
     try {
-        // Register user
-        const regRes = await fetch("/api/users/register", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                username: formData.name,
-                email: formData.email,
-                password: formData.password
-            })
-        });
+      // Register user
+      const { data: regData, error: regError } = await register({
+        username: formData.name,
+        email: formData.email,
+        password: formData.password
+      });
 
-        const regData = await regRes.json();
+      if (regError || !regData) {
+        setErrors({ ...errors, form: regError || "Registration failed" });
+        return;
+      }
 
-        if (!regRes.ok) {
-            setErrors({ ...errors, form: regData.error || "Registration failed" });
-            return;
-        }
+      // Auto-login after registration
+      const { data: loginData, error: loginError } = await login({
+        email: formData.email,
+        password: formData.password
+      });
 
-        // Auto-login after registration
-        const loginRes = await fetch("/api/users/login", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                email: formData.email,
-                password: formData.password
-            })
-        });
+      if (loginError || !loginData) {
+        // Should not happen if reg succeeded, but handle anyway
+        onSwitchToLogin(); // Redirect to login form
+        return;
+      }
 
-        if (!loginRes.ok) {
-            // Should not happen if reg succeeded, but handle anyway
-            onSwitchToLogin(); // Redirect to login form
-            return;
-        }
+      // Store user data
+      localStorage.setItem("user", JSON.stringify(loginData.user));
+      localStorage.setItem("isAuthenticated", "true");
 
-        const loginData = await loginRes.json();
-
-        // Store user data
-        localStorage.setItem("user", JSON.stringify(loginData.user));
-        localStorage.setItem("isAuthenticated", "true");
-
-        // Redirect to onboarding
-        window.location.href = "/journey";
+      // Redirect to onboarding
+      window.location.href = "/journey";
 
     } catch (err) {
-        console.error("Signup error:", err);
-        setErrors({ ...errors, form: "Network error. Please try again." });
+      console.error("Signup error:", err);
+      setErrors({ ...errors, form: "Network error. Please try again." });
     }
   }
 
@@ -337,32 +325,26 @@ function LoginForm({ onBack }: { onBack: () => void }) {
     }
 
     try {
-        const res = await fetch("/api/users/login", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                email: formData.email,
-                password: formData.password
-            })
-        });
+      const { data, error } = await login({
+        email: formData.email,
+        password: formData.password
+      });
 
-        const data = await res.json();
+      if (error || !data) {
+        setErrors({ ...errors, form: error || "Login failed" });
+        return;
+      }
 
-        if (!res.ok) {
-            setErrors({ ...errors, form: data.error || "Login failed" });
-            return;
-        }
+      // Store user data
+      localStorage.setItem("user", JSON.stringify(data.user));
+      localStorage.setItem("isAuthenticated", "true");
 
-        // Store user data
-        localStorage.setItem("user", JSON.stringify(data.user));
-        localStorage.setItem("isAuthenticated", "true");
-
-        // Redirect to dashboard
-        window.location.href = "/dashboard";
+      // Redirect to dashboard
+      window.location.href = "/dashboard";
 
     } catch (err) {
-        console.error("Login error:", err);
-        setErrors({ ...errors, form: "Network error. Please try again." });
+      console.error("Login error:", err);
+      setErrors({ ...errors, form: "Network error. Please try again." });
     }
   }
 
