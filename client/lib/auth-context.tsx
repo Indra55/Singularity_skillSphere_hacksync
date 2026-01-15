@@ -1,21 +1,34 @@
 "use client"
 
 import * as React from "react"
+import { getCurrentUser, logout as apiLogout, type User as ApiUser } from "./api"
 
 type UserRole = "admin" | "student"
 
 type User = {
+  id: string
   name: string
+  username: string
   email: string
   role?: UserRole
   avatar?: string
+  phone?: string
+  location?: string
+  age?: number
+  proficiency_level?: string
+  career_goal_short?: string
+  career_goal_long?: string
+  onboarding_completed?: boolean
+  onboarding_step?: number
 }
 
 type AuthContextType = {
   user: User | null
   loading: boolean
+  isAuthenticated: boolean
   setUser: (user: User | null) => void
-  logout: () => void
+  logout: () => Promise<void>
+  refreshUser: () => Promise<void>
 }
 
 const AuthContext = React.createContext<AuthContextType | undefined>(undefined)
@@ -24,37 +37,77 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUserState] = React.useState<User | null>(null)
   const [loading, setLoading] = React.useState(true)
 
-  React.useEffect(() => {
-    const isAuthenticated = localStorage.getItem("isAuthenticated")
-    const userData = localStorage.getItem("user")
-    
-    if (isAuthenticated && userData) {
-      try {
-        const parsedUser = JSON.parse(userData)
-        setUserState({ ...parsedUser, role: parsedUser.role || "student" })
-      } catch (e) {
-        console.error("Error parsing user data:", e)
-      }
+  const refreshUser = React.useCallback(async () => {
+    const token = localStorage.getItem("token")
+
+    if (!token) {
+      setUserState(null)
+      setLoading(false)
+      return
     }
+
+    try {
+      const result = await getCurrentUser()
+
+      if (result.data?.user) {
+        const apiUser = result.data.user
+        setUserState({
+          id: apiUser.id,
+          name: apiUser.name || apiUser.username,
+          username: apiUser.username,
+          email: apiUser.email,
+          phone: apiUser.phone,
+          location: apiUser.location,
+          age: apiUser.age,
+          proficiency_level: apiUser.proficiency_level,
+          career_goal_short: apiUser.career_goal_short,
+          career_goal_long: apiUser.career_goal_long,
+          onboarding_completed: apiUser.onboarding_completed,
+          onboarding_step: apiUser.onboarding_step,
+          role: "student",
+        })
+      } else {
+        // Token invalid or user not found
+        localStorage.removeItem("token")
+        setUserState(null)
+      }
+    } catch (e) {
+      console.error("Error fetching user:", e)
+      localStorage.removeItem("token")
+      setUserState(null)
+    }
+
     setLoading(false)
   }, [])
 
+  React.useEffect(() => {
+    refreshUser()
+  }, [refreshUser])
+
   const setUser = React.useCallback((user: User | null) => {
     setUserState(user)
-    if (user) {
-      localStorage.setItem("user", JSON.stringify(user))
-      localStorage.setItem("isAuthenticated", "true")
-    } else {
-      localStorage.removeItem("user")
-      localStorage.removeItem("isAuthenticated")
+    if (!user) {
+      localStorage.removeItem("token")
     }
   }, [])
 
-  const logout = React.useCallback(() => {
-    setUser(null)
-  }, [setUser])
+  const logout = React.useCallback(async () => {
+    try {
+      await apiLogout()
+    } catch (e) {
+      console.error("Logout error:", e)
+    }
+    localStorage.removeItem("token")
+    setUserState(null)
+  }, [])
 
-  return <AuthContext.Provider value={{ user, loading, setUser, logout }}>{children}</AuthContext.Provider>
+  const isAuthenticated = !!user
+
+  return (
+    <AuthContext.Provider value={{ user, loading, isAuthenticated, setUser, logout, refreshUser }}>
+      {children}
+    </AuthContext.Provider>
+  )
 }
 
 export const useAuth = () => {

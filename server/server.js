@@ -1,10 +1,20 @@
 const express = require("express")
 const app = express()
 const cookieParser = require("cookie-parser")
+const cors = require("cors")
 
 require("dotenv").config()
 
+// CORS configuration - allow frontend to communicate with backend
+const corsOptions = {
+    origin: process.env.FRONTEND_URL || "http://localhost:3000",
+    credentials: true, // Allow cookies to be sent
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+}
+
 // Middleware
+app.use(cors(corsOptions))
 app.use(express.urlencoded({ extended: false }))
 app.use(express.json())
 
@@ -18,7 +28,7 @@ app.use((err, req, res, next) => {
         });
     }
     next();
-});
+});  
 
 app.use(cookieParser())
 

@@ -4,6 +4,24 @@ const pool = require("../config/dbConfig");
 const { authenticateToken } = require("../middleware/auth");
 
 /**
+ * @route GET /api/profile/education
+ * @desc Get all education records for the current user
+ * @access Private
+ */
+router.get("/education", authenticateToken, async (req, res) => {
+    try {
+        const result = await pool.query(
+            "SELECT id, degree, major, institution, graduation_year FROM education WHERE user_id = $1 ORDER BY graduation_year DESC",
+            [req.user.id]
+        );
+        res.json({ education: result.rows });
+    } catch (err) {
+        console.error("Get education error:", err);
+        res.status(500).json({ error: "Failed to fetch education" });
+    }
+});
+
+/**
  * @route POST /api/profile/education
  * @desc Add education details
  * @access Private
@@ -19,6 +37,24 @@ router.post("/education", authenticateToken, async (req, res) => {
     } catch (err) {
         console.error("Education error:", err);
         res.status(500).json({ error: "Failed to add education" });
+    }
+});
+
+/**
+ * @route GET /api/profile/experience
+ * @desc Get all experience records for the current user
+ * @access Private
+ */
+router.get("/experience", authenticateToken, async (req, res) => {
+    try {
+        const result = await pool.query(
+            "SELECT id, title, organization, description, start_date, end_date FROM experience WHERE user_id = $1 ORDER BY start_date DESC",
+            [req.user.id]
+        );
+        res.json({ experience: result.rows });
+    } catch (err) {
+        console.error("Get experience error:", err);
+        res.status(500).json({ error: "Failed to fetch experience" });
     }
 });
 

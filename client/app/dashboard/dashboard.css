@@ -30,10 +30,10 @@
   --chart-5: oklch(0.6 0.14 280);
   --glass-bg: rgba(255, 255, 255, 0.6);
   --glass-bg-strong: rgba(255, 255, 255, 0.9);
-  
+
   /* Fix cursor - dashboard should have normal cursor */
   cursor: auto;
-  
+
   /* Warm white background */
   background-color: var(--background) !important;
 }
@@ -232,20 +232,24 @@ nav.dashboard-theme svg {
 
 /* Premium animations and effects for dashboard */
 @keyframes gradient-shift {
+
   0%,
   100% {
     background-position: 0% 50%;
   }
+
   50% {
     background-position: 100% 50%;
   }
 }
 
 @keyframes glow {
+
   0%,
   100% {
     box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
   }
+
   50% {
     box-shadow: 0 0 30px rgba(0, 0, 0, 0.15);
   }
@@ -255,6 +259,7 @@ nav.dashboard-theme svg {
   0% {
     background-position: -1000px 0;
   }
+
   100% {
     background-position: 1000px 0;
   }

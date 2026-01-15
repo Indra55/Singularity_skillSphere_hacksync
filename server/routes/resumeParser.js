@@ -284,6 +284,140 @@ Return JSON:
       };
     }
   }
+
+  /**
+   * COMPREHENSIVE: Generate full career dashboard data
+   * Includes: career paths, trending roles, fast-growing industries, skill gaps
+   * This fulfills the problem statement requirement for AI Career Path Recommender
+   */
+  async generateCareerDashboard(userProfile) {
+    // Build comprehensive context from user profile
+    const technicalSkills = (userProfile.technical_skills || userProfile.skills || []).slice(0, 12).join(', ') || 'Not specified';
+    const softSkills = (userProfile.soft_skills || []).slice(0, 6).join(', ') || 'Not specified';
+    const interests = (userProfile.interests || []).slice(0, 5).join(', ') || 'Not specified';
+    const education = (userProfile.education || []).map(e => `${e.degree || e.field_of_study || 'Degree'} from ${e.institution || 'University'}`).join('; ') || 'Not specified';
+    const experience = (userProfile.experience || []).slice(0, 3).map(e => `${e.title || 'Role'} at ${e.company || e.organization || 'Company'}`).join('; ') || 'Not specified';
+
+    const prompt = `You are a career advisor AI. Analyze this professional profile and provide comprehensive career guidance.
+
+PROFILE:
+- Current Title: ${userProfile.title || userProfile.career_goal_short || 'Not specified'}
+- Experience Level: ${userProfile.proficiency_level || 'intermediate'}
+- Years of Experience: ${userProfile.years_of_experience || 0}
+- Technical Skills: ${technicalSkills}
+- Soft Skills: ${softSkills}
+- Education: ${education}
+- Interests: ${interests}
+- Recent Roles: ${experience}
+- Preferred Work Mode: ${userProfile.preferred_work_mode || 'Not specified'}
+
+Provide career recommendations considering:
+1. Current skills and experience
+2. Education background
+3. Personal interests
+4. 2025-2026 job market trends
+5. Fast-growing industries
+
+Return this EXACT JSON structure:
+{
+  "profile_summary": {
+    "current_level": "junior/mid/senior/lead/executive",
+    "primary_domain": "Main field of expertise",
+    "profile_strength_score": 75,
+    "profile_completeness": 80
+  },
+  "recommended_career_paths": [
+    {
+      "title": "Specific Job Title",
+      "match_score": 95,
+      "reasoning": "Why this role fits the profile",
+      "skill_gaps": ["skill1", "skill2"],
+      "estimated_transition_time": "3-6 months",
+      "salary_range": "$80k-$120k",
+      "growth_outlook": "High demand, +25% growth"
+    }
+  ],
+  "trending_roles_2026": [
+    {
+      "title": "Trending Role",
+      "demand_level": "Very High",
+      "why_trending": "Brief explanation",
+      "relevance_to_profile": "How it relates to user's skills"
+    }
+  ],
+  "fast_growing_industries": [
+    {
+      "industry": "Industry Name",
+      "growth_rate": "+35%",
+      "key_roles": ["Role 1", "Role 2"],
+      "skills_needed": ["Skill 1", "Skill 2"],
+      "fit_for_profile": "High/Medium/Low"
+    }
+  ],
+  "skill_development_priorities": [
+    {
+      "skill": "Skill to Learn",
+      "priority": "high/medium/low",
+      "reason": "Why this skill matters",
+      "learning_resources": ["Resource type 1", "Resource type 2"],
+      "estimated_time": "2-3 months"
+    }
+  ],
+  "career_trajectory": {
+    "short_term_goal": "Goal for next 6-12 months",
+    "medium_term_goal": "Goal for 1-2 years",
+    "long_term_vision": "Where career could lead in 3-5 years"
+  },
+  "action_items": [
+    "Specific actionable step 1",
+    "Specific actionable step 2",
+    "Specific actionable step 3"
+  ]
+}
+
+Provide exactly 5 recommended career paths, 4 trending roles, 3 fast-growing industries, and 4 skill priorities.`;
+
+    try {
+      const text = await this.callWithRetry(prompt);
+
+      const result = this.safeJsonParse(text, {
+        profile_summary: {
+          current_level: 'mid',
+          primary_domain: 'Technology',
+          profile_strength_score: 50,
+          profile_completeness: 50
+        },
+        recommended_career_paths: [],
+        trending_roles_2026: [],
+        fast_growing_industries: [],
+        skill_development_priorities: [],
+        career_trajectory: {
+          short_term_goal: 'Build core skills',
+          medium_term_goal: 'Advance to senior role',
+          long_term_vision: 'Leadership position'
+        },
+        action_items: []
+      });
+
+      // Add metadata
+      result.generated_at = new Date().toISOString();
+      result.data_sources = ['Profile Analysis', 'Resume Data', 'Market Trends 2026'];
+
+      return result;
+    } catch (error) {
+      console.error('Error generating career dashboard:', error.message);
+      return {
+        error: 'Failed to generate career dashboard. Please try again.',
+        profile_summary: { current_level: 'unknown', profile_strength_score: 0 },
+        recommended_career_paths: [],
+        trending_roles_2026: [],
+        fast_growing_industries: [],
+        skill_development_priorities: [],
+        career_trajectory: {},
+        action_items: []
+      };
+    }
+  }
 }
 
 module.exports = new EnhancedResumeService();

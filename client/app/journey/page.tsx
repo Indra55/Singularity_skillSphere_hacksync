@@ -1,9 +1,12 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { MagneticButton } from "@/components/magnetic-button"
-import { Upload, FileText, User, Phone, MapPin, Briefcase, GraduationCap, Calendar } from "lucide-react"
+import { Upload, FileText, User, Phone, MapPin, Briefcase, GraduationCap, Calendar, Loader2 } from "lucide-react"
+import { useAuth } from "@/lib/auth-context"
+import { submitBasicInfo, submitCareerGoals, submitSkills, uploadResume } from "@/lib/api"
 
 interface OnboardingData {
   name: string
@@ -20,6 +23,8 @@ interface OnboardingData {
 }
 
 export default function JourneyOnboarding() {
+  const router = useRouter()
+  const { user, loading: authLoading, isAuthenticated, refreshUser } = useAuth()
   const [step, setStep] = useState(0)
   const [formData, setFormData] = useState<OnboardingData>({
     name: "",
@@ -35,6 +40,34 @@ export default function JourneyOnboarding() {
   })
   const [isComplete, setIsComplete] = useState(false)
   const [resumeFile, setResumeFile] = useState<File | null>(null)
+  const [isSaving, setIsSaving] = useState(false)
+  const [apiError, setApiError] = useState<string | null>(null)
+  const [isUploadingResume, setIsUploadingResume] = useState(false)
+
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      router.push("/auth")
+    }
+  }, [authLoading, isAuthenticated, router])
+
+  // Pre-fill form with user data if available
+  useEffect(() => {
+    if (user) {
+      setFormData(prev => ({
+        ...prev,
+        name: user.name || prev.name,
+        phone: user.phone || prev.phone,
+        location: user.location || prev.location,
+        age: user.age?.toString() || prev.age,
+      }))
+
+      // Resume from where user left off
+      if (user.onboarding_step && user.onboarding_step > 0) {
+        setStep(user.onboarding_step)
+      }
+    }
+  }, [user])
 
   const genders = [
     { id: "male", label: "Male" },
@@ -82,8 +115,35 @@ export default function JourneyOnboarding() {
     { id: "soft-skills", label: "Soft Skills", desc: "Communication, leadership" },
   ]
 
-  const handleNext = () => {
-    if (step < 3) {
+  const handleNext = async () => {
+    if (step === 0) {
+      // Save basic info to backend
+      setIsSaving(true)
+      setApiError(null)
+
+      try {
+        const result = await submitBasicInfo({
+          name: formData.name,
+          phone: formData.phone || undefined,
+          age: formData.age ? parseInt(formData.age) : undefined,
+          gender: formData.gender || undefined,
+          location: formData.location || undefined,
+        })
+
+        if (result.error) {
+          setApiError(result.error)
+          setIsSaving(false)
+          return
+        }
+
+        setStep(1)
+      } catch (error) {
+        console.error("Error saving basic info:", error)
+        setApiError("Failed to save. Please try again.")
+      }
+
+      setIsSaving(false)
+    } else if (step < 3) {
       setStep(step + 1)
     }
   }
@@ -94,43 +154,138 @@ export default function JourneyOnboarding() {
     }
   }
 
-  const handleResumeUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleRoleSelect = async (roleId: string) => {
+    setFormData({ ...formData, role: roleId })
+
+    // Auto-advance after role selection and save to backend
+    setIsSaving(true)
+    setApiError(null)
+
+    try {
+      const result = await submitCareerGoals({
+        role: roleId,
+        status: formData.currentStatus || "student", // Default status
+      })
+
+      if (result.error) {
+        setApiError(result.error)
+        setIsSaving(false)
+        return
+      }
+
+      setTimeout(() => {
+        setStep(2)
+        setIsSaving(false)
+      }, 300)
+    } catch (error) {
+      console.error("Error saving career goals:", error)
+      setApiError("Failed to save. Please try again.")
+      setIsSaving(false)
+    }
+  }
+
+  const handleStatusAndExperience = async () => {
+    // Save career goals with status
+    setIsSaving(true)
+    setApiError(null)
+
+    try {
+      const result = await submitCareerGoals({
+        role: formData.role,
+        status: formData.currentStatus,
+        experience: formData.experience,
+      })
+
+      if (result.error) {
+        setApiError(result.error)
+        setIsSaving(false)
+        return
+      }
+
+      setStep(3)
+    } catch (error) {
+      console.error("Error saving career goals:", error)
+      setApiError("Failed to save. Please try again.")
+    }
+
+    setIsSaving(false)
+  }
+
+  const handleResumeUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
       setResumeFile(file)
-      setFormData({ ...formData, resumeUrl: file.name, resumeAutoFill: true })
-      // In a real app, you would parse the resume and auto-fill the form
-      // For now, we'll simulate auto-fill
-      setTimeout(() => {
-        // Simulate auto-fill from resume
-        setFormData((prev) => ({
-          ...prev,
-          name: prev.name || "John Doe", // Would come from resume parsing
-          phone: prev.phone || "+1 (555) 123-4567",
-          role: prev.role || "Software Engineer",
-          experience: prev.experience || "mid",
-          skills: prev.skills.length === 0 ? ["programming", "frontend", "backend"] : prev.skills,
-        }))
-      }, 1000)
+      setIsUploadingResume(true)
+      setApiError(null)
+
+      try {
+        const result = await uploadResume(file)
+
+        if (result.error) {
+          setApiError(result.error)
+          setIsUploadingResume(false)
+          return
+        }
+
+        setFormData({ ...formData, resumeUrl: file.name, resumeAutoFill: true })
+
+        // Auto-fill skills if parsed from resume
+        // In a real implementation, the backend would return extracted skills
+        if (result.data) {
+          setFormData((prev) => ({
+            ...prev,
+            resumeAutoFill: true,
+            skills: prev.skills.length === 0 ? ["programming", "frontend", "backend"] : prev.skills,
+          }))
+        }
+      } catch (error) {
+        console.error("Error uploading resume:", error)
+        setApiError("Failed to upload resume. Please try again.")
+      }
+
+      setIsUploadingResume(false)
     }
+  }
+
+  const handleComplete = async () => {
+    setIsSaving(true)
+    setApiError(null)
+
+    try {
+      // Submit skills to complete onboarding
+      const result = await submitSkills({
+        skills: formData.skills.length > 0 ? formData.skills : ["general"],
+      })
+
+      if (result.error) {
+        setApiError(result.error)
+        setIsSaving(false)
+        return
+      }
+
+      // Refresh user data
+      await refreshUser()
+
+      // Save profile data to localStorage for backward compatibility
+      localStorage.setItem("onboardingData", JSON.stringify(formData))
+      localStorage.setItem("profileData", JSON.stringify(formData))
+
+      setIsComplete(true)
+    } catch (error) {
+      console.error("Error completing onboarding:", error)
+      setApiError("Failed to complete onboarding. Please try again.")
+    }
+
+    setIsSaving(false)
   }
 
   const handleManualComplete = () => {
     setFormData({ ...formData, resumeAutoFill: false })
-    // Continue to manual profile completion
     handleComplete()
   }
 
-  const handleComplete = () => {
-    // Save onboarding data
-    localStorage.setItem("onboardingData", JSON.stringify(formData))
-    // Also save as profile data
-    localStorage.setItem("profileData", JSON.stringify(formData))
-    setIsComplete(true)
-  }
-
   const handleStart = () => {
-    window.location.href = "/dashboard"
+    router.push("/dashboard")
   }
 
   const canProceed = () => {
@@ -146,6 +301,15 @@ export default function JourneyOnboarding() {
       default:
         return false
     }
+  }
+
+  // Show loading while checking auth
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-accent" />
+      </div>
+    )
   }
 
   return (
@@ -189,14 +353,20 @@ export default function JourneyOnboarding() {
                 {[0, 1, 2, 3].map((i) => (
                   <div
                     key={i}
-                    className={`h-1.5 flex-1 rounded-full transition-all duration-300 ${
-                      i <= step ? "bg-accent" : "bg-foreground/20"
-                    }`}
+                    className={`h-1.5 flex-1 rounded-full transition-all duration-300 ${i <= step ? "bg-accent" : "bg-foreground/20"
+                      }`}
                   />
                 ))}
               </div>
               <p className="text-sm text-foreground/60 font-mono">Step {step + 1} of 4</p>
             </div>
+
+            {/* API Error Display */}
+            {apiError && (
+              <div className="mb-6 p-4 rounded-xl bg-destructive/10 border border-destructive/30 text-destructive">
+                {apiError}
+              </div>
+            )}
 
             {/* Page 1: Personal Information */}
             {step === 0 && (
@@ -220,6 +390,7 @@ export default function JourneyOnboarding() {
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                       className="w-full px-4 py-3 rounded-xl border border-foreground/20 bg-foreground/5 backdrop-blur-sm text-foreground focus:outline-none focus:border-accent/50 focus:bg-foreground/10 transition-all"
                       placeholder="Enter your full name"
+                      disabled={isSaving}
                     />
                   </div>
 
@@ -236,6 +407,7 @@ export default function JourneyOnboarding() {
                       onChange={(e) => setFormData({ ...formData, age: e.target.value })}
                       className="w-full px-4 py-3 rounded-xl border border-foreground/20 bg-foreground/5 backdrop-blur-sm text-foreground focus:outline-none focus:border-accent/50 focus:bg-foreground/10 transition-all"
                       placeholder="Enter your age"
+                      disabled={isSaving}
                     />
                   </div>
 
@@ -250,6 +422,7 @@ export default function JourneyOnboarding() {
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                       className="w-full px-4 py-3 rounded-xl border border-foreground/20 bg-foreground/5 backdrop-blur-sm text-foreground focus:outline-none focus:border-accent/50 focus:bg-foreground/10 transition-all"
                       placeholder="+1 (555) 000-0000"
+                      disabled={isSaving}
                     />
                   </div>
 
@@ -260,11 +433,11 @@ export default function JourneyOnboarding() {
                         <button
                           key={gender.id}
                           onClick={() => setFormData({ ...formData, gender: gender.id })}
-                          className={`p-3 rounded-xl border transition-all duration-300 backdrop-blur-sm ${
-                            formData.gender === gender.id
-                              ? "bg-accent/20 border-accent/50 scale-[1.02]"
-                              : "bg-foreground/10 border-foreground/20 hover:bg-foreground/15 hover:border-foreground/40"
-                          }`}
+                          disabled={isSaving}
+                          className={`p-3 rounded-xl border transition-all duration-300 backdrop-blur-sm ${formData.gender === gender.id
+                            ? "bg-accent/20 border-accent/50 scale-[1.02]"
+                            : "bg-foreground/10 border-foreground/20 hover:bg-foreground/15 hover:border-foreground/40"
+                            } ${isSaving ? "opacity-50 cursor-not-allowed" : ""}`}
                         >
                           <p className="font-semibold text-foreground">{gender.label}</p>
                         </button>
@@ -283,12 +456,20 @@ export default function JourneyOnboarding() {
                       onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                       className="w-full px-4 py-3 rounded-xl border border-foreground/20 bg-foreground/5 backdrop-blur-sm text-foreground focus:outline-none focus:border-accent/50 focus:bg-foreground/10 transition-all"
                       placeholder="City, Country"
+                      disabled={isSaving}
                     />
                   </div>
 
                   <div className="flex justify-end pt-4">
-                    <MagneticButton size="lg" variant="primary" onClick={handleNext} disabled={!canProceed()}>
-                      Continue
+                    <MagneticButton size="lg" variant="primary" onClick={handleNext} disabled={!canProceed() || isSaving}>
+                      {isSaving ? (
+                        <span className="flex items-center gap-2">
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Saving...
+                        </span>
+                      ) : (
+                        "Continue"
+                      )}
                     </MagneticButton>
                   </div>
                 </div>
@@ -309,15 +490,12 @@ export default function JourneyOnboarding() {
                   {roles.map((role) => (
                     <button
                       key={role.id}
-                      onClick={() => {
-                        setFormData({ ...formData, role: role.id })
-                        setTimeout(() => handleNext(), 300)
-                      }}
-                      className={`group text-left p-5 rounded-xl border transition-all duration-300 backdrop-blur-sm ${
-                        formData.role === role.id
-                          ? "bg-accent/20 border-accent/50 scale-[1.02]"
-                          : "bg-foreground/10 border-foreground/20 hover:bg-foreground/15 hover:border-foreground/40"
-                      }`}
+                      onClick={() => handleRoleSelect(role.id)}
+                      disabled={isSaving}
+                      className={`group text-left p-5 rounded-xl border transition-all duration-300 backdrop-blur-sm ${formData.role === role.id
+                        ? "bg-accent/20 border-accent/50 scale-[1.02]"
+                        : "bg-foreground/10 border-foreground/20 hover:bg-foreground/15 hover:border-foreground/40"
+                        } ${isSaving ? "opacity-50 cursor-not-allowed" : ""}`}
                     >
                       <div className="flex items-start gap-3">
                         <div className="flex-1">
@@ -332,7 +510,7 @@ export default function JourneyOnboarding() {
                 </div>
 
                 <div className="flex justify-between pt-4">
-                  <MagneticButton size="lg" variant="secondary" onClick={handleBack}>
+                  <MagneticButton size="lg" variant="secondary" onClick={handleBack} disabled={isSaving}>
                     Back
                   </MagneticButton>
                 </div>
@@ -357,11 +535,11 @@ export default function JourneyOnboarding() {
                         <button
                           key={status.id}
                           onClick={() => setFormData({ ...formData, currentStatus: status.id })}
-                          className={`group text-left p-5 rounded-xl border transition-all duration-300 backdrop-blur-sm ${
-                            formData.currentStatus === status.id
-                              ? "bg-accent/20 border-accent/50 scale-[1.02]"
-                              : "bg-foreground/10 border-foreground/20 hover:bg-foreground/15 hover:border-foreground/40"
-                          }`}
+                          disabled={isSaving}
+                          className={`group text-left p-5 rounded-xl border transition-all duration-300 backdrop-blur-sm ${formData.currentStatus === status.id
+                            ? "bg-accent/20 border-accent/50 scale-[1.02]"
+                            : "bg-foreground/10 border-foreground/20 hover:bg-foreground/15 hover:border-foreground/40"
+                            } ${isSaving ? "opacity-50 cursor-not-allowed" : ""}`}
                         >
                           <div className="flex items-start gap-3">
                             <div className="flex-1">
@@ -383,11 +561,11 @@ export default function JourneyOnboarding() {
                         <button
                           key={level.id}
                           onClick={() => setFormData({ ...formData, experience: level.id })}
-                          className={`group text-left p-5 rounded-xl border transition-all duration-300 backdrop-blur-sm ${
-                            formData.experience === level.id
-                              ? "bg-accent/20 border-accent/50 scale-[1.02]"
-                              : "bg-foreground/10 border-foreground/20 hover:bg-foreground/15 hover:border-foreground/40"
-                          }`}
+                          disabled={isSaving}
+                          className={`group text-left p-5 rounded-xl border transition-all duration-300 backdrop-blur-sm ${formData.experience === level.id
+                            ? "bg-accent/20 border-accent/50 scale-[1.02]"
+                            : "bg-foreground/10 border-foreground/20 hover:bg-foreground/15 hover:border-foreground/40"
+                            } ${isSaving ? "opacity-50 cursor-not-allowed" : ""}`}
                         >
                           <div className="flex items-start gap-3">
                             <div className="flex-1">
@@ -403,11 +581,18 @@ export default function JourneyOnboarding() {
                   </div>
 
                   <div className="flex justify-between pt-4">
-                    <MagneticButton size="lg" variant="secondary" onClick={handleBack}>
+                    <MagneticButton size="lg" variant="secondary" onClick={handleBack} disabled={isSaving}>
                       Back
                     </MagneticButton>
-                    <MagneticButton size="lg" variant="primary" onClick={handleNext} disabled={!canProceed()}>
-                      Continue
+                    <MagneticButton size="lg" variant="primary" onClick={handleStatusAndExperience} disabled={!canProceed() || isSaving}>
+                      {isSaving ? (
+                        <span className="flex items-center gap-2">
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Saving...
+                        </span>
+                      ) : (
+                        "Continue"
+                      )}
                     </MagneticButton>
                   </div>
                 </div>
@@ -444,13 +629,24 @@ export default function JourneyOnboarding() {
                       onChange={handleResumeUpload}
                       className="hidden"
                       id="resume-upload"
+                      disabled={isUploadingResume || isSaving}
                     />
                     <label
                       htmlFor="resume-upload"
-                      className="inline-flex items-center gap-2 px-6 py-3 bg-accent/20 hover:bg-accent/30 rounded-lg cursor-pointer transition-colors"
+                      className={`inline-flex items-center gap-2 px-6 py-3 bg-accent/20 hover:bg-accent/30 rounded-lg cursor-pointer transition-colors ${isUploadingResume || isSaving ? "opacity-50 cursor-not-allowed" : ""
+                        }`}
                     >
-                      <FileText className="w-5 h-5" />
-                      <span>Choose File</span>
+                      {isUploadingResume ? (
+                        <>
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                          <span>Uploading...</span>
+                        </>
+                      ) : (
+                        <>
+                          <FileText className="w-5 h-5" />
+                          <span>Choose File</span>
+                        </>
+                      )}
                     </label>
                     {resumeFile && (
                       <p className="text-sm text-foreground/80 mt-3 flex items-center gap-2">
@@ -496,11 +692,11 @@ export default function JourneyOnboarding() {
                                       : [...formData.skills, skill.id],
                                   })
                                 }}
-                                className={`group text-left p-4 rounded-xl border transition-all duration-300 backdrop-blur-sm ${
-                                  isSelected
-                                    ? "bg-accent/20 border-accent/50 scale-[1.02]"
-                                    : "bg-foreground/10 border-foreground/20 hover:bg-foreground/15 hover:border-foreground/40"
-                                }`}
+                                disabled={isSaving}
+                                className={`group text-left p-4 rounded-xl border transition-all duration-300 backdrop-blur-sm ${isSelected
+                                  ? "bg-accent/20 border-accent/50 scale-[1.02]"
+                                  : "bg-foreground/10 border-foreground/20 hover:bg-foreground/15 hover:border-foreground/40"
+                                  } ${isSaving ? "opacity-50 cursor-not-allowed" : ""}`}
                               >
                                 <div className="flex items-start gap-3">
                                   <div className="flex-1">
@@ -526,16 +722,25 @@ export default function JourneyOnboarding() {
                   )}
 
                   <div className="flex justify-between pt-4">
-                    <MagneticButton size="lg" variant="secondary" onClick={handleBack}>
+                    <MagneticButton size="lg" variant="secondary" onClick={handleBack} disabled={isSaving}>
                       Back
                     </MagneticButton>
                     <MagneticButton
                       size="lg"
                       variant="primary"
                       onClick={formData.resumeAutoFill ? handleComplete : handleManualComplete}
-                      disabled={!canProceed()}
+                      disabled={!canProceed() || isSaving}
                     >
-                      {formData.resumeAutoFill ? "Complete" : "Finish"}
+                      {isSaving ? (
+                        <span className="flex items-center gap-2">
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Completing...
+                        </span>
+                      ) : formData.resumeAutoFill ? (
+                        "Complete"
+                      ) : (
+                        "Finish"
+                      )}
                     </MagneticButton>
                   </div>
                 </div>

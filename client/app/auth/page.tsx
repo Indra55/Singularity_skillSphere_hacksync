@@ -2,10 +2,13 @@
 
 import { useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { Shader, ChromaFlow, Swirl } from "shaders/react"
 import { CustomCursor } from "@/components/custom-cursor"
 import { GrainOverlay } from "@/components/grain-overlay"
 import { MagneticButton } from "@/components/magnetic-button"
+import { register, login } from "@/lib/api"
+import { useAuth } from "@/lib/auth-context"
 
 export default function AuthPage() {
   const [authMode, setAuthMode] = useState<"select" | "signup" | "login">("select")
@@ -125,6 +128,8 @@ function SignUpForm({ onBack, onSwitchToLogin }: { onBack: () => void, onSwitchT
     confirmPassword: "",
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [isLoading, setIsLoading] = useState(false)
+  const [apiError, setApiError] = useState<string | null>(null)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -217,6 +222,12 @@ function SignUpForm({ onBack, onSwitchToLogin }: { onBack: () => void, onSwitchT
         <p className="text-foreground/70">Fill in your details to begin your journey.</p>
       </div>
 
+      {apiError && (
+        <div className="mb-6 p-4 rounded-xl bg-destructive/10 border border-destructive/30 text-destructive">
+          {apiError}
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
           <label htmlFor="name" className="mb-2 block text-sm font-medium text-foreground">
@@ -227,10 +238,10 @@ function SignUpForm({ onBack, onSwitchToLogin }: { onBack: () => void, onSwitchT
             type="text"
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            className={`w-full rounded-xl border bg-foreground/5 px-4 py-3 text-foreground backdrop-blur-sm transition-all placeholder:text-foreground/40 focus:border-accent focus:outline-none ${
-              errors.name ? "border-destructive" : "border-foreground/20"
-            }`}
+            className={`w-full rounded-xl border bg-foreground/5 px-4 py-3 text-foreground backdrop-blur-sm transition-all placeholder:text-foreground/40 focus:border-accent focus:outline-none ${errors.name ? "border-destructive" : "border-foreground/20"
+              }`}
             placeholder="John Doe"
+            disabled={isLoading}
           />
           {errors.name && <p className="mt-1 text-sm text-destructive">{errors.name}</p>}
         </div>
@@ -244,10 +255,10 @@ function SignUpForm({ onBack, onSwitchToLogin }: { onBack: () => void, onSwitchT
             type="email"
             value={formData.email}
             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-            className={`w-full rounded-xl border bg-foreground/5 px-4 py-3 text-foreground backdrop-blur-sm transition-all placeholder:text-foreground/40 focus:border-accent focus:outline-none ${
-              errors.email ? "border-destructive" : "border-foreground/20"
-            }`}
+            className={`w-full rounded-xl border bg-foreground/5 px-4 py-3 text-foreground backdrop-blur-sm transition-all placeholder:text-foreground/40 focus:border-accent focus:outline-none ${errors.email ? "border-destructive" : "border-foreground/20"
+              }`}
             placeholder="john@example.com"
+            disabled={isLoading}
           />
           {errors.email && <p className="mt-1 text-sm text-destructive">{errors.email}</p>}
         </div>
@@ -261,10 +272,10 @@ function SignUpForm({ onBack, onSwitchToLogin }: { onBack: () => void, onSwitchT
             type="password"
             value={formData.password}
             onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-            className={`w-full rounded-xl border bg-foreground/5 px-4 py-3 text-foreground backdrop-blur-sm transition-all placeholder:text-foreground/40 focus:border-accent focus:outline-none ${
-              errors.password ? "border-destructive" : "border-foreground/20"
-            }`}
+            className={`w-full rounded-xl border bg-foreground/5 px-4 py-3 text-foreground backdrop-blur-sm transition-all placeholder:text-foreground/40 focus:border-accent focus:outline-none ${errors.password ? "border-destructive" : "border-foreground/20"
+              }`}
             placeholder="At least 8 characters"
+            disabled={isLoading}
           />
           {errors.password && <p className="mt-1 text-sm text-destructive">{errors.password}</p>}
         </div>
@@ -278,17 +289,17 @@ function SignUpForm({ onBack, onSwitchToLogin }: { onBack: () => void, onSwitchT
             type="password"
             value={formData.confirmPassword}
             onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-            className={`w-full rounded-xl border bg-foreground/5 px-4 py-3 text-foreground backdrop-blur-sm transition-all placeholder:text-foreground/40 focus:border-accent focus:outline-none ${
-              errors.confirmPassword ? "border-destructive" : "border-foreground/20"
-            }`}
+            className={`w-full rounded-xl border bg-foreground/5 px-4 py-3 text-foreground backdrop-blur-sm transition-all placeholder:text-foreground/40 focus:border-accent focus:outline-none ${errors.confirmPassword ? "border-destructive" : "border-foreground/20"
+              }`}
             placeholder="Re-enter your password"
+            disabled={isLoading}
           />
           {errors.confirmPassword && <p className="mt-1 text-sm text-destructive">{errors.confirmPassword}</p>}
         </div>
 
         <div className="w-full">
-          <MagneticButton type="submit" size="lg" variant="primary" className="w-full">
-            Continue to Onboarding
+          <MagneticButton type="submit" size="lg" variant="primary" className="w-full" disabled={isLoading}>
+            {isLoading ? "Creating Account..." : "Continue to Onboarding"}
           </MagneticButton>
         </div>
       </form>
@@ -297,11 +308,15 @@ function SignUpForm({ onBack, onSwitchToLogin }: { onBack: () => void, onSwitchT
 }
 
 function LoginForm({ onBack }: { onBack: () => void }) {
+  const router = useRouter()
+  const { refreshUser } = useAuth()
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [isLoading, setIsLoading] = useState(false)
+  const [apiError, setApiError] = useState<string | null>(null)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -366,6 +381,12 @@ function LoginForm({ onBack }: { onBack: () => void }) {
         <p className="text-foreground/70">Log in to access your dashboard.</p>
       </div>
 
+      {apiError && (
+        <div className="mb-6 p-4 rounded-xl bg-destructive/10 border border-destructive/30 text-destructive">
+          {apiError}
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
           <label htmlFor="login-email" className="mb-2 block text-sm font-medium text-foreground">
@@ -376,10 +397,10 @@ function LoginForm({ onBack }: { onBack: () => void }) {
             type="email"
             value={formData.email}
             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-            className={`w-full rounded-xl border bg-foreground/5 px-4 py-3 text-foreground backdrop-blur-sm transition-all placeholder:text-foreground/40 focus:border-accent focus:outline-none ${
-              errors.email ? "border-destructive" : "border-foreground/20"
-            }`}
+            className={`w-full rounded-xl border bg-foreground/5 px-4 py-3 text-foreground backdrop-blur-sm transition-all placeholder:text-foreground/40 focus:border-accent focus:outline-none ${errors.email ? "border-destructive" : "border-foreground/20"
+              }`}
             placeholder="john@example.com"
+            disabled={isLoading}
           />
           {errors.email && <p className="mt-1 text-sm text-destructive">{errors.email}</p>}
         </div>
@@ -393,17 +414,17 @@ function LoginForm({ onBack }: { onBack: () => void }) {
             type="password"
             value={formData.password}
             onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-            className={`w-full rounded-xl border bg-foreground/5 px-4 py-3 text-foreground backdrop-blur-sm transition-all placeholder:text-foreground/40 focus:border-accent focus:outline-none ${
-              errors.password ? "border-destructive" : "border-foreground/20"
-            }`}
+            className={`w-full rounded-xl border bg-foreground/5 px-4 py-3 text-foreground backdrop-blur-sm transition-all placeholder:text-foreground/40 focus:border-accent focus:outline-none ${errors.password ? "border-destructive" : "border-foreground/20"
+              }`}
             placeholder="Enter your password"
+            disabled={isLoading}
           />
           {errors.password && <p className="mt-1 text-sm text-destructive">{errors.password}</p>}
         </div>
 
         <div className="w-full">
-          <MagneticButton type="submit" size="lg" variant="primary" className="w-full">
-            Log In
+          <MagneticButton type="submit" size="lg" variant="primary" className="w-full" disabled={isLoading}>
+            {isLoading ? "Logging in..." : "Log In"}
           </MagneticButton>
         </div>
       </form>

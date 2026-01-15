@@ -644,9 +644,215 @@ curl -X POST http://localhost:5555/api/profile/preferences \
 
 ## Recommendations
 
-### 1. Get Career Recommendations
+### 1. Get Career Recommendations (Basic)
 ```bash
 curl -X GET http://localhost:5555/api/recommendations/career \
   -b cookies.txt \
   -v
 ```
+
+**Response:**
+```json
+{
+  "user_id": "uuid",
+  "recommendations": [
+    {
+      "title": "Senior Full Stack Developer",
+      "reason": "Aligns with your stated goal",
+      "match_score": 95
+    }
+  ]
+}
+```
+
+---
+
+### 2. Get Career Dashboard (Comprehensive) ⭐ NEW
+```bash
+curl -X GET http://localhost:5555/api/recommendations/dashboard \
+  -b cookies.txt \
+  -v
+```
+
+This is the **main endpoint for your homepage dashboard**. It provides:
+- Profile overview with completeness score
+- AI-powered career path recommendations
+- Trending roles for 2025-2026
+- Fast-growing industries with growth rates
+- Skill development priorities
+- Career trajectory (short/medium/long term goals)
+- Actionable steps
+
+**Response:**
+```json
+{
+  "user_id": "uuid",
+  "user_name": "John Doe",
+  
+  "profile_overview": {
+    "completeness_percentage": 75,
+    "completeness_breakdown": {
+      "basic_info": 18,
+      "skills": 15,
+      "education": 10,
+      "experience": 15,
+      "preferences": 7,
+      "resume": 10
+    },
+    "onboarding_completed": true,
+    "has_resume": true,
+    "resume_score": 82
+  },
+
+  "career_dashboard": {
+    "profile_summary": {
+      "current_level": "mid",
+      "primary_domain": "Full Stack Development",
+      "profile_strength_score": 78,
+      "profile_completeness": 80
+    },
+    "recommended_career_paths": [
+      {
+        "title": "Senior Full Stack Developer",
+        "match_score": 95,
+        "reasoning": "Strong alignment with current skills and experience",
+        "skill_gaps": ["System Design", "Cloud Architecture"],
+        "estimated_transition_time": "3-6 months",
+        "salary_range": "$120k-$160k",
+        "growth_outlook": "High demand, +28% growth"
+      }
+    ],
+    "trending_roles_2026": [
+      {
+        "title": "AI/ML Engineer",
+        "demand_level": "Very High",
+        "why_trending": "Explosion of AI applications across all industries",
+        "relevance_to_profile": "Your JS skills can transfer to Python for ML"
+      }
+    ],
+    "fast_growing_industries": [
+      {
+        "industry": "Artificial Intelligence",
+        "growth_rate": "+45%",
+        "key_roles": ["ML Engineer", "AI Researcher", "MLOps Engineer"],
+        "skills_needed": ["Python", "TensorFlow", "Data Science"],
+        "fit_for_profile": "Medium"
+      }
+    ],
+    "skill_development_priorities": [
+      {
+        "skill": "System Design",
+        "priority": "high",
+        "reason": "Essential for senior roles",
+        "learning_resources": ["Online courses", "Architecture books"],
+        "estimated_time": "2-3 months"
+      }
+    ],
+    "career_trajectory": {
+      "short_term_goal": "Master system design for senior interviews",
+      "medium_term_goal": "Lead a team of 3-5 developers",
+      "long_term_vision": "Engineering Manager or Staff Engineer"
+    },
+    "action_items": [
+      "Complete a system design course in the next 2 months",
+      "Contribute to open-source projects",
+      "Build a portfolio project showcasing full-stack skills"
+    ],
+    "generated_at": "2026-01-15T07:40:00.000Z",
+    "data_sources": ["Profile Analysis", "Resume Data", "Market Trends 2026"]
+  },
+
+  "quick_stats": {
+    "total_skills": 12,
+    "technical_skills_count": 8,
+    "years_of_experience": 3,
+    "education_count": 1,
+    "experience_count": 2,
+    "current_goal": "Full Stack Developer"
+  },
+
+  "generated_at": "2026-01-15T07:40:00.000Z"
+}
+```
+
+---
+
+### 3. Get Trending Roles & Industries (Lightweight) ⭐ NEW
+```bash
+curl -X GET http://localhost:5555/api/recommendations/trending \
+  -b cookies.txt \
+  -v
+```
+
+A lighter endpoint for just trending data without AI analysis:
+
+**Response:**
+```json
+{
+  "trending_roles_2026": [
+    {
+      "title": "AI/ML Engineer",
+      "demand_level": "Very High",
+      "growth_rate": "+45%",
+      "why_trending": "Explosion of AI applications across all industries"
+    },
+    {
+      "title": "Cloud Solutions Architect",
+      "demand_level": "Very High",
+      "growth_rate": "+38%",
+      "why_trending": "Continued cloud migration and multi-cloud strategies"
+    }
+  ],
+  "fast_growing_industries": [
+    {
+      "industry": "Artificial Intelligence",
+      "growth_rate": "+45%",
+      "key_roles": ["ML Engineer", "AI Researcher", "Prompt Engineer", "MLOps Engineer"]
+    },
+    {
+      "industry": "Cybersecurity",
+      "growth_rate": "+35%",
+      "key_roles": ["Security Engineer", "Penetration Tester", "SOC Analyst"]
+    }
+  ],
+  "last_updated": "2026-01-15T07:40:00.000Z",
+  "source": "Market Analysis 2025-2026"
+}
+```
+
+---
+
+## API Endpoints Summary (Updated)
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| GET | `/` | No | Health check |
+| POST | `/api/users/register` | No | Register new user |
+| POST | `/api/users/login` | No | Login user |
+| POST | `/api/users/logout` | No | Logout user |
+| GET | `/api/users/me` | Yes | Get current user |
+| PUT | `/api/users/me` | Yes | Update profile |
+| GET | `/api/posts` | No | Get all posts |
+| GET | `/api/posts/:id` | No | Get single post |
+| POST | `/api/posts` | Yes | Create post |
+| POST | `/api/posts/:id/upvote` | Yes | Upvote post |
+| POST | `/api/posts/:id/downvote` | Yes | Downvote post |
+| GET | `/api/posts/:id/comments` | No | Get comments |
+| POST | `/api/posts/:id/comments` | Yes | Add comment |
+| POST | `/api/onboarding/basic-info` | Yes | Step 1: Basic Info |
+| POST | `/api/onboarding/career-goals` | Yes | Step 2: Career Info |
+| POST | `/api/onboarding/skills` | Yes | Step 3: Skills |
+| POST | `/api/onboarding/resume` | Yes | Optional: Resume Upload |
+| POST | `/api/profile/education` | Yes | Add education |
+| POST | `/api/profile/experience` | Yes | Add experience |
+| POST | `/api/profile/preferences` | Yes | Update preferences |
+| GET | `/api/skills` | Yes | Get user skills |
+| POST | `/api/skills` | Yes | Add skills |
+| GET | `/api/recommendations/career` | Yes | Basic career recommendations |
+| GET | `/api/recommendations/dashboard` | Yes | **⭐ Full career dashboard** |
+| GET | `/api/recommendations/trending` | Yes | Trending roles & industries |
+| POST | `/api/resume/upload` | Yes | Upload and parse resume |
+| GET | `/api/resume/recommendations` | Yes | AI career recommendations |
+| GET | `/api/resume/analyze` | Yes | Resume ATS analysis |
+| GET | `/api/resume/insights` | Yes | Career insights |
+

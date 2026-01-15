@@ -24,12 +24,24 @@ A secure authentication system built with Node.js, Express, PostgreSQL and Passp
 Create a `.env` file with:
 
 ```env
+# Database connection
+DATABASE_URL=postgresql://postgres:your_password@localhost:5432/nodelogin
+
+# Or use individual connection params
 PGUSER=postgres
 PGHOST=localhost
 PGPASSWORD=your_password
 PGDATABASE=nodelogin
 PGPORT=5432
+
+# JWT Secret for authentication
 JWT_SECRET=your_jwt_secret
+
+# Frontend URL for CORS (optional, defaults to http://localhost:3000)
+FRONTEND_URL=http://localhost:3000
+
+# Server port (optional, defaults to 5555)
+PORT=5555
 ```
 
 ## Installation

@@ -20,8 +20,13 @@ import {
   PolarAngleAxis,
   PolarRadiusAxis,
   Radar,
-  ScatterChart,
-  Scatter,
+  BarChart,
+  Bar,
+  Cell,
+  PieChart,
+  Pie,
+  RadialBarChart,
+  RadialBar,
 } from "recharts"
 import {
   TrendingUp,
@@ -35,53 +40,125 @@ import {
   Clock,
   CheckCircle2,
   AlertCircle,
+  Loader2,
+  RefreshCw,
+  Briefcase,
+  GraduationCap,
+  DollarSign,
+  ArrowUpRight,
+  Star,
+  TrendingDown,
+  Building2,
+  Code,
+  Users,
+  ChevronRight,
+  BookOpen,
+  Rocket,
+  Shield,
+  Database,
+  Cloud,
+  Cpu,
+  MapPin,
+  Layers,
 } from "lucide-react"
-import { useEffect, useState } from "react"
-
-// Advanced data for career progression analytics
-const progressionData = [
-  { month: "Jan", engagement: 45, completions: 30, skillGrowth: 35 },
-  { month: "Feb", engagement: 52, completions: 38, skillGrowth: 42 },
-  { month: "Mar", engagement: 68, completions: 45, skillGrowth: 58 },
-  { month: "Apr", engagement: 74, completions: 52, skillGrowth: 65 },
-  { month: "May", engagement: 85, completions: 68, skillGrowth: 78 },
-  { month: "Jun", engagement: 92, completions: 75, skillGrowth: 88 },
-]
-
-const skillLevelData = [
-  { skill: "System Design", level: 78, benchmark: 65 },
-  { skill: "Communication", level: 82, benchmark: 70 },
-  { skill: "Leadership", level: 65, benchmark: 72 },
-  { skill: "Technical", level: 88, benchmark: 75 },
-  { skill: "Problem Solving", level: 85, benchmark: 68 },
-  { skill: "Collaboration", level: 80, benchmark: 72 },
-]
-
-const opportunityData = [
-  { x: 85, y: 72, size: 400, role: "Senior SDE", salaryGrowth: "18%" },
-  { x: 78, y: 65, size: 300, role: "Tech Lead" },
-  { x: 72, y: 88, size: 350, role: "Staff Engineer" },
-  { x: 65, y: 75, size: 250, role: "PM" },
-  { x: 88, y: 80, size: 420, role: "Architect" },
-]
-
-const timelineData = [
-  { date: "Jan 15", event: "System Design Mastery", status: "completed" },
-  { date: "Feb 22", event: "Interview Preparation", status: "completed" },
-  { date: "Mar 30", event: "Leadership Workshop", status: "in-progress" },
-  { date: "Apr 20", event: "Negotiation Skills", status: "upcoming" },
-  { date: "May 15", event: "Executive Presence", status: "upcoming" },
-]
+import { useEffect, useState, useCallback } from "react"
+import { getDashboardData, getSkills, type DashboardData, type Skill } from "@/lib/api"
 
 export default function DashboardPage() {
   const { user } = useAuth()
   const [mounted, setMounted] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  // Dashboard data from API
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null)
+  const [skills, setSkills] = useState<Skill[]>([])
+
+  const fetchDashboardData = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+
+    try {
+      const [dashboardResult, skillsResult] = await Promise.all([
+        getDashboardData(),
+        getSkills(),
+      ])
+
+      if (dashboardResult.data) {
+        setDashboardData(dashboardResult.data)
+      } else if (dashboardResult.error) {
+        console.error("Dashboard API error:", dashboardResult.error)
+        setError(dashboardResult.error)
+      }
+
+      if (skillsResult.data?.skills) {
+        setSkills(skillsResult.data.skills)
+      }
+
+    } catch (err) {
+      console.error("Failed to fetch dashboard data:", err)
+      setError("Failed to load dashboard data. Please try again.")
+    } finally {
+      setLoading(false)
+    }
+  }, [])
 
   useEffect(() => {
     setMounted(true)
   }, [])
 
+  useEffect(() => {
+    if (mounted) {
+      fetchDashboardData()
+    }
+  }, [mounted, fetchDashboardData])
+
   if (!mounted) return null
+
+  const profileOverview = dashboardData?.profile_overview
+  const careerDashboard = dashboardData?.career_dashboard
+  const quickStats = dashboardData?.quick_stats
+  const profileSummary = careerDashboard?.profile_summary
+
+  // Prepare chart data
+  const completenessData = profileOverview?.completeness_breakdown ? [
+    { name: "Basic Info", value: profileOverview.completeness_breakdown.basic_info, fill: "hsl(var(--color-primary))" },
+    { name: "Skills", value: profileOverview.completeness_breakdown.skills, fill: "hsl(var(--color-secondary))" },
+    { name: "Education", value: profileOverview.completeness_breakdown.education, fill: "#10b981" },
+    { name: "Experience", value: profileOverview.completeness_breakdown.experience, fill: "#f59e0b" },
+    { name: "Preferences", value: profileOverview.completeness_breakdown.preferences, fill: "#8b5cf6" },
+    { name: "Resume", value: profileOverview.completeness_breakdown.resume, fill: "#ec4899" },
+  ] : []
+
+  // Sort for RadialBarChart to look good (descending order usually looks best)
+  const radialData = [...completenessData].sort((a, b) => b.value - a.value).map(item => ({
+    ...item,
+    fill: item.fill // Ensure fill is passed
+  }));
+
+  const careerPathsData = careerDashboard?.recommended_career_paths?.map(path => ({
+    name: path.title.length > 20 ? path.title.substring(0, 18) + "..." : path.title,
+    fullName: path.title,
+    matchScore: path.match_score,
+    fill: path.match_score >= 90 ? "#10b981" : path.match_score >= 80 ? "#3b82f6" : "#f59e0b",
+  })) || []
+
+  // Prepare Skills Radar Data
+  // If we have skills with proficiency, use them. Otherwise, mock some data based on profile summary or just show top skills
+  const skillsRadarData = skills.length > 0
+    ? skills.slice(0, 6).map(s => ({
+      subject: s.skill_name,
+      A: s.proficiency || 80, // Default to 80 if no proficiency
+      fullMark: 100,
+    }))
+    : [
+      { subject: 'Coding', A: 85, fullMark: 100 },
+      { subject: 'Design', A: 65, fullMark: 100 },
+      { subject: 'Communication', A: 90, fullMark: 100 },
+      { subject: 'Leadership', A: 75, fullMark: 100 },
+      { subject: 'Problem Solving', A: 95, fullMark: 100 },
+      { subject: 'Teamwork', A: 85, fullMark: 100 },
+    ];
 
   return (
     <ProtectedRoute>
@@ -89,295 +166,527 @@ export default function DashboardPage() {
         <DynamicNavbar />
         <main className="min-h-screen bg-background pt-28 pb-20">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            {/* Header with Welcome & Quick Stats */}
-            <section className="mb-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <div className="flex items-start justify-between mb-8">
+
+            {/* Header */}
+            <section className="mb-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
                 <div>
                   <h1 className="text-4xl font-bold tracking-tight text-pretty mb-2 text-foreground">
-                    {user?.name ? `Welcome back, ${user.name.split(" ")[0]}` : "Welcome to Your Dashboard"}
+                    {dashboardData?.user_name ? `Welcome, ${dashboardData.user_name.split(" ")[0]}` : user?.name ? `Welcome, ${user.name.split(" ")[0]}` : "Career Dashboard"}
                   </h1>
-                  <p className="text-muted-foreground font-medium">Your career growth at a glance</p>
+                  <p className="text-muted-foreground font-medium flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-primary" />
+                    AI-powered career insights tailored just for you
+                  </p>
                 </div>
-                <Button className="gap-2 bg-primary hover:bg-primary/90">
-                  <Sparkles className="w-4 h-4" />
-                  Get AI Insights
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={fetchDashboardData}
+                    disabled={loading}
+                    className="border-border/40 hover:bg-muted"
+                  >
+                    <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+                  </Button>
+                  <Button className="gap-2 bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all hover:scale-105">
+                    <Sparkles className="w-4 h-4" />
+                    Refresh Insights
+                  </Button>
+                </div>
               </div>
 
-              {/* Quick Stats Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {[
-                  {
-                    label: "Resume Strength",
-                    value: "85%",
-                    change: "+5% this week",
-                    icon: Target,
-                    color: "text-primary",
-                    link: "/resume-builder",
-                  },
-                  {
-                    label: "Learning Streak",
-                    value: "28 days",
-                    change: "Personal best! 🔥",
-                    icon: Flame,
-                    color: "text-orange-500",
-                    link: "/learning",
-                  },
-                  {
-                    label: "Career Persona",
-                    value: "The Innovator",
-                    change: "View details",
-                    icon: Brain,
-                    color: "text-secondary",
-                    link: "/career-persona",
-                  },
-                  {
-                    label: "Job Trends",
-                    value: "AI Roles ↑150%",
-                    change: "Top opportunity",
-                    icon: TrendingUp,
-                    color: "text-emerald-500",
-                    link: "/job-trends",
-                  },
-                ].map((stat, idx) => {
-                  const Icon = stat.icon
-                  return (
-                    <Card
-                      key={idx}
-                      onClick={() => stat.link && (window.location.href = stat.link)}
-                      className="p-4 border-border/40 bg-card/50 backdrop-blur-sm hover:bg-card/60 transition-all duration-300 hover:shadow-lg cursor-pointer animate-in fade-in slide-in-from-bottom-4"
-                      style={{ animationDelay: `${100 * idx}ms` }}
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <p className="text-sm text-muted-foreground font-medium mb-2">{stat.label}</p>
-                          <p className="text-2xl font-bold mb-1 text-foreground">{stat.value}</p>
-                          <p className="text-xs text-muted-foreground">{stat.change}</p>
-                        </div>
-                        <Icon className={`w-6 h-6 ${stat.color} opacity-70`} />
-                      </div>
-                    </Card>
-                  )
-                })}
-              </div>
+              {error && (
+                <div className="mb-6 p-4 rounded-lg bg-destructive/10 border border-destructive/30 text-destructive flex items-center gap-2">
+                  <AlertCircle className="w-5 h-5" />
+                  <span>{error}</span>
+                </div>
+              )}
             </section>
 
-            {/* Main Analytics Grid */}
-            <section className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-100">
-              {/* Career Progression Chart - Large */}
-              <Card className="lg:col-span-2 p-6 border-border/40 bg-card/50 backdrop-blur-sm">
-                <div className="mb-4">
-                  <h2 className="text-xl font-bold flex items-center gap-2 mb-1 text-foreground">
-                    <TrendingUp className="w-5 h-5 text-primary" />
-                    Career Progression
-                  </h2>
-                  <p className="text-sm text-muted-foreground">Your growth metrics over the last 6 months</p>
+            {loading ? (
+              <div className="flex items-center justify-center min-h-[60vh]">
+                <div className="flex flex-col items-center gap-4">
+                  <Loader2 className="w-12 h-12 animate-spin text-primary" />
+                  <p className="text-muted-foreground">Loading your career insights...</p>
                 </div>
-                <ResponsiveContainer width="100%" height={300}>
-                  <AreaChart data={progressionData}>
-                    <defs>
-                      <linearGradient id="colorEngagement" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="hsl(var(--color-primary))" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="hsl(var(--color-primary))" stopOpacity={0} />
-                      </linearGradient>
-                      <linearGradient id="colorCompletions" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="hsl(var(--color-secondary))" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="hsl(var(--color-secondary))" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--color-border))" />
-                    <XAxis dataKey="month" stroke="hsl(var(--color-muted-foreground))" />
-                    <YAxis stroke="hsl(var(--color-muted-foreground))" />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: "hsl(var(--color-card))",
-                        border: "1px solid hsl(var(--color-border))",
-                        borderRadius: "8px",
-                      }}
-                    />
-                    <Legend />
-                    <Area
-                      type="monotone"
-                      dataKey="engagement"
-                      stroke="hsl(var(--color-primary))"
-                      fillOpacity={1}
-                      fill="url(#colorEngagement)"
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="skillGrowth"
-                      stroke="hsl(var(--color-secondary))"
-                      fillOpacity={1}
-                      fill="url(#colorCompletions)"
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </Card>
+              </div>
+            ) : (
+              <>
+                {/* Profile Overview Section */}
+                <section className="mb-10 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-100">
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
 
-              {/* Quick Actions Sidebar */}
-              <Card className="p-6 border-border/40 bg-card/50 backdrop-blur-sm flex flex-col justify-between">
-                <div>
-                  <h2 className="text-xl font-bold flex items-center gap-2 mb-4 text-foreground">
-                    <Zap className="w-5 h-5 text-primary" />
-                    Next Steps
-                  </h2>
-                  <div className="space-y-3">
-                    {[
-                      { icon: Brain, label: "Complete System Design", priority: "high" },
-                      { icon: CheckCircle2, label: "Review Resume Feedback", priority: "medium" },
-                      { icon: Clock, label: "Schedule Mock Interview", priority: "medium" },
-                      { icon: AlertCircle, label: "Update Portfolio", priority: "low" },
-                    ].map((item, idx) => {
-                      const Icon = item.icon
-                      const priorityColor = {
-                        high: "bg-red-500/20 text-red-600 border-red-500/30",
-                        medium: "bg-amber-500/20 text-amber-600 border-amber-500/30",
-                        low: "bg-blue-500/20 text-blue-600 border-blue-500/30",
-                      }[item.priority]
-                      return (
-                        <div
-                          key={idx}
-                          className="p-3 rounded-lg border border-border/30 hover:bg-card/80 transition-colors cursor-pointer group"
-                        >
-                          <div className="flex items-start gap-3">
-                            <Icon className="w-4 h-4 mt-1 flex-shrink-0 text-primary" />
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium group-hover:text-primary transition-colors text-foreground">
-                                {item.label}
-                              </p>
-                              <div
-                                className={`inline-block mt-2 px-2 py-1 rounded text-xs font-medium border ${priorityColor}`}
-                              >
-                                {item.priority}
+                    {/* Left Column: Stats Cards */}
+                    <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Profile Strength */}
+                      <Card className="p-6 border-border/40 bg-gradient-to-br from-primary/5 to-primary/10 backdrop-blur-sm relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                          <Award className="w-24 h-24 text-primary" />
+                        </div>
+                        <div className="relative z-10">
+                          <div className="flex items-center justify-between mb-4">
+                            <h3 className="font-semibold text-foreground">Profile Strength</h3>
+                            <div className={`p-2 rounded-lg ${(profileSummary?.profile_strength_score || 0) >= 70 ? 'bg-emerald-500/20' : 'bg-amber-500/20'}`}>
+                              <Award className={`w-5 h-5 ${(profileSummary?.profile_strength_score || 0) >= 70 ? 'text-emerald-500' : 'text-amber-500'}`} />
+                            </div>
+                          </div>
+                          <div className="flex items-end gap-2 mb-2">
+                            <span className="text-4xl font-bold text-foreground">{profileSummary?.profile_strength_score || profileOverview?.completeness_percentage || 0}%</span>
+                            <span className="text-sm text-muted-foreground mb-1">completeness</span>
+                          </div>
+                          <div className="w-full bg-muted/50 rounded-full h-2 mb-2">
+                            <div
+                              className="bg-primary h-2 rounded-full transition-all duration-1000 ease-out"
+                              style={{ width: `${profileSummary?.profile_strength_score || profileOverview?.completeness_percentage || 0}%` }}
+                            />
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            {profileSummary?.profile_strength_score && profileSummary.profile_strength_score >= 80
+                              ? "Excellent! Your profile is very strong."
+                              : "Add more details to improve your strength."}
+                          </p>
+                        </div>
+                      </Card>
+
+                      {/* Resume Score */}
+                      <Card className="p-6 border-border/40 bg-gradient-to-br from-emerald-500/5 to-emerald-500/10 backdrop-blur-sm relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                          <CheckCircle2 className="w-24 h-24 text-emerald-500" />
+                        </div>
+                        <div className="relative z-10">
+                          <div className="flex items-center justify-between mb-4">
+                            <h3 className="font-semibold text-foreground">Resume Score</h3>
+                            <div className="p-2 rounded-lg bg-emerald-500/20">
+                              <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                            </div>
+                          </div>
+                          <div className="flex items-end gap-2 mb-2">
+                            <span className="text-4xl font-bold text-foreground">
+                              {profileOverview?.resume_score !== null && profileOverview?.resume_score !== undefined
+                                ? profileOverview.resume_score
+                                : "N/A"}
+                            </span>
+                            <span className="text-sm text-muted-foreground mb-1">/ 100</span>
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            {profileOverview?.resume_score ? "ATS Optimized & Ready" : "Upload resume to get score"}
+                          </p>
+                        </div>
+                      </Card>
+
+                      {/* Current Level */}
+                      <Card className="p-6 border-border/40 bg-card/50 backdrop-blur-sm">
+                        <div className="flex items-start gap-4">
+                          <div className="p-3 rounded-xl bg-secondary/10">
+                            <GraduationCap className="w-6 h-6 text-secondary" />
+                          </div>
+                          <div>
+                            <p className="text-sm text-muted-foreground font-medium">Current Level</p>
+                            <p className="text-xl font-bold text-foreground capitalize mt-1">{profileSummary?.current_level || "Junior"}</p>
+                            <p className="text-sm text-muted-foreground mt-1">{profileSummary?.primary_domain || "Software Development"}</p>
+                          </div>
+                        </div>
+                      </Card>
+
+                      {/* Experience */}
+                      <Card className="p-6 border-border/40 bg-card/50 backdrop-blur-sm">
+                        <div className="flex items-start gap-4">
+                          <div className="p-3 rounded-xl bg-amber-500/10">
+                            <Briefcase className="w-6 h-6 text-amber-500" />
+                          </div>
+                          <div>
+                            <p className="text-sm text-muted-foreground font-medium">Experience</p>
+                            <p className="text-xl font-bold text-foreground mt-1">{quickStats?.years_of_experience || 0} Years</p>
+                            <p className="text-sm text-muted-foreground mt-1">
+                              {quickStats?.total_skills || 0} skills • {quickStats?.education_count || 0} education
+                            </p>
+                          </div>
+                        </div>
+                      </Card>
+                    </div>
+
+                    {/* Right Column: Radial Chart */}
+                    <Card className="col-span-1 p-6 border-border/40 bg-card/50 backdrop-blur-sm flex flex-col items-center justify-center min-h-[300px]">
+                      <h3 className="text-lg font-semibold mb-4 text-foreground w-full text-left">Completeness Breakdown</h3>
+                      <div className="w-full h-[250px] relative">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <RadialBarChart
+                            cx="50%"
+                            cy="50%"
+                            innerRadius="20%"
+                            outerRadius="100%"
+                            barSize={15}
+                            data={radialData}
+                            startAngle={90}
+                            endAngle={-270}
+                          >
+                            <RadialBar
+                              label={{ position: 'insideStart', fill: '#fff', fontSize: 10 }}
+                              background
+                              dataKey="value"
+                              cornerRadius={10}
+                            />
+                            <Legend
+                              iconSize={10}
+                              layout="vertical"
+                              verticalAlign="middle"
+                              wrapperStyle={{
+                                right: 0,
+                                top: '50%',
+                                transform: 'translateY(-50%)',
+                                fontSize: '12px'
+                              }}
+                            />
+                            <Tooltip
+                              contentStyle={{
+                                backgroundColor: "hsl(var(--color-card))",
+                                border: "1px solid hsl(var(--color-border))",
+                                borderRadius: "8px",
+                              }}
+                            />
+                          </RadialBarChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </Card>
+                  </div>
+                </section>
+
+                {/* Main Content Grid */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+                  {/* Left Column (2/3 width) */}
+                  <div className="lg:col-span-2 space-y-8">
+
+                    {/* Recommended Career Paths */}
+                    {careerDashboard?.recommended_career_paths && careerDashboard.recommended_career_paths.length > 0 && (
+                      <section className="animate-in fade-in slide-in-from-bottom-4 duration-500 delay-200">
+                        <div className="flex items-center justify-between mb-6">
+                          <div className="flex items-center gap-2">
+                            <div className="p-2 rounded-lg bg-emerald-500/10">
+                              <Rocket className="w-5 h-5 text-emerald-500" />
+                            </div>
+                            <h2 className="text-2xl font-bold text-foreground">Recommended Career Paths</h2>
+                          </div>
+                          <span className="px-3 py-1 text-xs font-medium bg-primary/10 text-primary rounded-full flex items-center gap-1">
+                            <Sparkles className="w-3 h-3" /> AI-Powered
+                          </span>
+                        </div>
+
+                        {/* Career Match Chart */}
+                        <Card className="p-6 border-border/40 bg-card/50 backdrop-blur-sm mb-6">
+                          <h3 className="text-lg font-semibold mb-4 text-foreground">Match Score Analysis</h3>
+                          <div className="h-[250px] w-full">
+                            <ResponsiveContainer width="100%" height="100%">
+                              <BarChart data={careerPathsData} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--color-border))" horizontal={true} vertical={false} />
+                                <XAxis type="number" domain={[0, 100]} hide />
+                                <YAxis type="category" dataKey="name" width={140} tick={{ fontSize: 12, fill: "hsl(var(--color-muted-foreground))" }} />
+                                <Tooltip
+                                  cursor={{ fill: 'transparent' }}
+                                  content={({ active, payload }) => {
+                                    if (active && payload && payload.length) {
+                                      const data = payload[0].payload;
+                                      return (
+                                        <div className="bg-popover border border-border p-3 rounded-lg shadow-xl">
+                                          <p className="font-bold text-foreground">{data.fullName}</p>
+                                          <p className="text-sm text-muted-foreground">Match Score: <span className="font-bold text-primary">{data.matchScore}%</span></p>
+                                        </div>
+                                      );
+                                    }
+                                    return null;
+                                  }}
+                                />
+                                <Bar dataKey="matchScore" radius={[0, 4, 4, 0]} barSize={24}>
+                                  {careerPathsData.map((entry, index) => (
+                                    <Cell key={`cell-${index}`} fill={entry.fill} />
+                                  ))}
+                                </Bar>
+                              </BarChart>
+                            </ResponsiveContainer>
+                          </div>
+                        </Card>
+
+                        {/* Career Cards */}
+                        <div className="grid grid-cols-1 gap-4">
+                          {careerDashboard.recommended_career_paths.map((path, idx) => (
+                            <Card
+                              key={idx}
+                              className="p-6 border-border/40 bg-card/50 backdrop-blur-sm hover:bg-card/80 transition-all duration-300 hover:shadow-lg group relative overflow-hidden"
+                            >
+                              <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-primary to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+
+                              <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-4">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <h3 className="text-xl font-bold text-foreground group-hover:text-primary transition-colors">
+                                      {path.title}
+                                    </h3>
+                                    {idx === 0 && (
+                                      <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-primary/20 text-primary border border-primary/20">
+                                        Top Pick
+                                      </span>
+                                    )}
+                                  </div>
+                                  <p className="text-sm text-muted-foreground mb-4">{path.reasoning}</p>
+                                </div>
+                                <div className="flex flex-col items-end gap-2 min-w-[120px]">
+                                  <div className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm font-bold ${path.match_score >= 90 ? 'bg-emerald-500/10 text-emerald-600' :
+                                    path.match_score >= 80 ? 'bg-blue-500/10 text-blue-600' :
+                                      'bg-amber-500/10 text-amber-600'
+                                    }`}>
+                                    <Target className="w-4 h-4" />
+                                    {path.match_score}% Match
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4 p-4 rounded-xl bg-muted/30">
+                                <div className="flex items-center gap-3">
+                                  <div className="p-2 rounded-lg bg-emerald-500/10">
+                                    <DollarSign className="w-4 h-4 text-emerald-500" />
+                                  </div>
+                                  <div>
+                                    <p className="text-xs text-muted-foreground">Salary Range</p>
+                                    <p className="text-sm font-semibold text-foreground">{path.salary_range}</p>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                  <div className="p-2 rounded-lg bg-blue-500/10">
+                                    <Clock className="w-4 h-4 text-blue-500" />
+                                  </div>
+                                  <div>
+                                    <p className="text-xs text-muted-foreground">Transition Time</p>
+                                    <p className="text-sm font-semibold text-foreground">{path.estimated_transition_time}</p>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                  <div className="p-2 rounded-lg bg-primary/10">
+                                    <TrendingUp className="w-4 h-4 text-primary" />
+                                  </div>
+                                  <div>
+                                    <p className="text-xs text-muted-foreground">Growth Outlook</p>
+                                    <p className="text-sm font-semibold text-foreground">{path.growth_outlook}</p>
+                                  </div>
+                                </div>
+                              </div>
+
+                              {path.skill_gaps && path.skill_gaps.length > 0 && (
+                                <div>
+                                  <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">
+                                    <Layers className="w-3 h-3" /> Skills to Develop:
+                                  </p>
+                                  <div className="flex flex-wrap gap-2">
+                                    {path.skill_gaps.map((skill, sIdx) => (
+                                      <span key={sIdx} className="px-2.5 py-1 text-xs font-medium bg-background border border-border rounded-md text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors">
+                                        {skill}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </Card>
+                          ))}
+                        </div>
+                      </section>
+                    )}
+
+                    {/* Career Trajectory Timeline */}
+                    {careerDashboard?.career_trajectory && (
+                      <section className="animate-in fade-in slide-in-from-bottom-4 duration-500 delay-300">
+                        <div className="flex items-center gap-2 mb-6">
+                          <div className="p-2 rounded-lg bg-indigo-500/10">
+                            <Calendar className="w-5 h-5 text-indigo-500" />
+                          </div>
+                          <h2 className="text-2xl font-bold text-foreground">Your Career Trajectory</h2>
+                        </div>
+
+                        <Card className="p-8 border-border/40 bg-card/50 backdrop-blur-sm relative overflow-hidden">
+                          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 opacity-50" />
+
+                          <div className="relative">
+                            {/* Vertical Line */}
+                            <div className="absolute left-[28px] top-4 bottom-4 w-0.5 bg-border" />
+
+                            <div className="space-y-10">
+                              {/* Short Term */}
+                              <div className="relative flex items-start gap-6 group">
+                                <div className="relative z-10 flex items-center justify-center w-14 h-14 rounded-full bg-card border-2 border-emerald-500 shadow-lg shadow-emerald-500/20 group-hover:scale-110 transition-transform">
+                                  <Clock className="w-6 h-6 text-emerald-500" />
+                                </div>
+                                <div className="flex-1 pt-2">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <span className="px-2 py-0.5 rounded text-xs font-bold bg-emerald-500/10 text-emerald-600">Short Term</span>
+                                    <span className="text-xs text-muted-foreground">6-12 months</span>
+                                  </div>
+                                  <h4 className="text-lg font-bold text-foreground mb-2">{careerDashboard.career_trajectory.short_term_goal}</h4>
+                                  <p className="text-sm text-muted-foreground">Focus on building foundational skills and gaining initial experience in your target domain.</p>
+                                </div>
+                              </div>
+
+                              {/* Medium Term */}
+                              <div className="relative flex items-start gap-6 group">
+                                <div className="relative z-10 flex items-center justify-center w-14 h-14 rounded-full bg-card border-2 border-blue-500 shadow-lg shadow-blue-500/20 group-hover:scale-110 transition-transform">
+                                  <TrendingUp className="w-6 h-6 text-blue-500" />
+                                </div>
+                                <div className="flex-1 pt-2">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <span className="px-2 py-0.5 rounded text-xs font-bold bg-blue-500/10 text-blue-600">Medium Term</span>
+                                    <span className="text-xs text-muted-foreground">1-2 years</span>
+                                  </div>
+                                  <h4 className="text-lg font-bold text-foreground mb-2">{careerDashboard.career_trajectory.medium_term_goal}</h4>
+                                  <p className="text-sm text-muted-foreground">Expand your responsibilities, take on leadership in smaller projects, and specialize further.</p>
+                                </div>
+                              </div>
+
+                              {/* Long Term */}
+                              <div className="relative flex items-start gap-6 group">
+                                <div className="relative z-10 flex items-center justify-center w-14 h-14 rounded-full bg-card border-2 border-purple-500 shadow-lg shadow-purple-500/20 group-hover:scale-110 transition-transform">
+                                  <Rocket className="w-6 h-6 text-purple-500" />
+                                </div>
+                                <div className="flex-1 pt-2">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <span className="px-2 py-0.5 rounded text-xs font-bold bg-purple-500/10 text-purple-600">Long Term</span>
+                                    <span className="text-xs text-muted-foreground">3-5 years</span>
+                                  </div>
+                                  <h4 className="text-lg font-bold text-foreground mb-2">{careerDashboard.career_trajectory.long_term_vision}</h4>
+                                  <p className="text-sm text-muted-foreground">Achieve a senior or lead role, driving major initiatives and mentoring others in the field.</p>
+                                </div>
                               </div>
                             </div>
                           </div>
+                        </Card>
+                      </section>
+                    )}
+
+                  </div>
+
+                  {/* Right Column (1/3 width) */}
+                  <div className="space-y-8">
+
+                    {/* Skills Radar Chart */}
+                    <section className="animate-in fade-in slide-in-from-bottom-4 duration-500 delay-400">
+                      <div className="flex items-center gap-2 mb-6">
+                        <div className="p-2 rounded-lg bg-pink-500/10">
+                          <Brain className="w-5 h-5 text-pink-500" />
                         </div>
-                      )
-                    })}
+                        <h2 className="text-xl font-bold text-foreground">Skills Profile</h2>
+                      </div>
+
+                      <Card className="p-4 border-border/40 bg-card/50 backdrop-blur-sm flex flex-col items-center">
+                        <div className="w-full h-[300px]">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <RadarChart cx="50%" cy="50%" outerRadius="70%" data={skillsRadarData}>
+                              <PolarGrid stroke="hsl(var(--color-border))" />
+                              <PolarAngleAxis dataKey="subject" tick={{ fill: 'hsl(var(--color-muted-foreground))', fontSize: 12 }} />
+                              <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
+                              <Radar
+                                name="My Skills"
+                                dataKey="A"
+                                stroke="hsl(var(--color-primary))"
+                                strokeWidth={2}
+                                fill="hsl(var(--color-primary))"
+                                fillOpacity={0.3}
+                              />
+                              <Tooltip
+                                contentStyle={{
+                                  backgroundColor: "hsl(var(--color-card))",
+                                  border: "1px solid hsl(var(--color-border))",
+                                  borderRadius: "8px",
+                                }}
+                              />
+                            </RadarChart>
+                          </ResponsiveContainer>
+                        </div>
+                        <p className="text-xs text-center text-muted-foreground mt-2">
+                          Visual representation of your top skills proficiency
+                        </p>
+                      </Card>
+                    </section>
+
+                    {/* Trending Roles 2026 */}
+                    {careerDashboard?.trending_roles_2026 && careerDashboard.trending_roles_2026.length > 0 && (
+                      <section className="animate-in fade-in slide-in-from-bottom-4 duration-500 delay-500">
+                        <div className="flex items-center gap-2 mb-6">
+                          <div className="p-2 rounded-lg bg-orange-500/10">
+                            <Flame className="w-5 h-5 text-orange-500" />
+                          </div>
+                          <h2 className="text-xl font-bold text-foreground">Trending Roles</h2>
+                        </div>
+
+                        <div className="space-y-4">
+                          {careerDashboard.trending_roles_2026.slice(0, 3).map((role, idx) => (
+                            <Card
+                              key={idx}
+                              className="p-4 border-border/40 bg-card/50 backdrop-blur-sm hover:bg-card/80 transition-all"
+                            >
+                              <div className="flex items-start gap-3">
+                                <div className="mt-1">
+                                  {idx === 0 ? <Cpu className="w-5 h-5 text-orange-500" /> :
+                                    idx === 1 ? <Cloud className="w-5 h-5 text-orange-500" /> :
+                                      <Code className="w-5 h-5 text-orange-500" />}
+                                </div>
+                                <div>
+                                  <h4 className="font-bold text-foreground text-sm">{role.title}</h4>
+                                  <div className="flex items-center gap-2 mt-1 mb-2">
+                                    <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${role.demand_level === 'Very High' ? 'bg-red-500/10 text-red-600' :
+                                        'bg-orange-500/10 text-orange-600'
+                                      }`}>
+                                      {role.demand_level} Demand
+                                    </span>
+                                  </div>
+                                  <p className="text-xs text-muted-foreground line-clamp-2">{role.why_trending}</p>
+                                </div>
+                              </div>
+                            </Card>
+                          ))}
+                        </div>
+                      </section>
+                    )}
+
+                    {/* Action Items */}
+                    {careerDashboard?.action_items && careerDashboard.action_items.length > 0 && (
+                      <section className="animate-in fade-in slide-in-from-bottom-4 duration-500 delay-600">
+                        <div className="flex items-center gap-2 mb-6">
+                          <div className="p-2 rounded-lg bg-green-500/10">
+                            <Zap className="w-5 h-5 text-green-500" />
+                          </div>
+                          <h2 className="text-xl font-bold text-foreground">Next Steps</h2>
+                        </div>
+
+                        <Card className="p-5 border-border/40 bg-card/50 backdrop-blur-sm">
+                          <div className="space-y-4">
+                            {careerDashboard.action_items.slice(0, 4).map((action, idx) => (
+                              <div key={idx} className="flex gap-3">
+                                <div className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${idx === 0 ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'
+                                  }`}>
+                                  {idx + 1}
+                                </div>
+                                <p className="text-sm text-foreground">{action}</p>
+                              </div>
+                            ))}
+                          </div>
+                        </Card>
+                      </section>
+                    )}
+
                   </div>
                 </div>
-              </Card>
-            </section>
 
-            {/* Skill Analysis & Opportunities */}
-            <section className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-12 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-200">
-              {/* Skill Radar Chart */}
-              <Card className="p-6 border-border/40 bg-card/50 backdrop-blur-sm">
-                <div className="mb-4">
-                  <h2 className="text-xl font-bold flex items-center gap-2 mb-1 text-foreground">
-                    <Award className="w-5 h-5 text-primary" />
-                    Skill Mastery Map
-                  </h2>
-                  <p className="text-sm text-muted-foreground">Your skills vs. industry benchmark</p>
-                </div>
-                <ResponsiveContainer width="100%" height={300}>
-                  <RadarChart data={skillLevelData}>
-                    <PolarGrid stroke="hsl(var(--color-border))" />
-                    <PolarAngleAxis dataKey="skill" stroke="hsl(var(--color-muted-foreground))" />
-                    <PolarRadiusAxis stroke="hsl(var(--color-muted-foreground))" />
-                    <Radar
-                      name="Your Level"
-                      dataKey="level"
-                      stroke="hsl(var(--color-primary))"
-                      fill="hsl(var(--color-primary))"
-                      fillOpacity={0.25}
-                    />
-                    <Radar
-                      name="Benchmark"
-                      dataKey="benchmark"
-                      stroke="hsl(var(--color-secondary))"
-                      fill="hsl(var(--color-secondary))"
-                      fillOpacity={0.1}
-                    />
-                    <Legend />
-                  </RadarChart>
-                </ResponsiveContainer>
-              </Card>
-
-              {/* Career Opportunities Scatter */}
-              <Card className="p-6 border-border/40 bg-card/50 backdrop-blur-sm">
-                <div className="mb-4">
-                  <h2 className="text-xl font-bold flex items-center gap-2 mb-1 text-foreground">
-                    <Target className="w-5 h-5 text-primary" />
-                    Opportunity Landscape
-                  </h2>
-                  <p className="text-sm text-muted-foreground">Roles matched to your profile</p>
-                </div>
-                <ResponsiveContainer width="100%" height={300}>
-                  <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--color-border))" />
-                    <XAxis type="number" dataKey="x" name="Skill Match %" stroke="hsl(var(--color-muted-foreground))" />
-                    <YAxis
-                      type="number"
-                      dataKey="y"
-                      name="Growth Potential %"
-                      stroke="hsl(var(--color-muted-foreground))"
-                    />
-                    <Tooltip
-                      cursor={{ strokeDasharray: "3 3" }}
-                      contentStyle={{
-                        backgroundColor: "hsl(var(--color-card))",
-                        border: "1px solid hsl(var(--color-border))",
-                        borderRadius: "8px",
-                      }}
-                    />
-                    <Scatter
-                      name="Career Opportunities"
-                      data={opportunityData}
-                      fill="hsl(var(--color-primary))"
-                      fillOpacity={0.6}
-                    />
-                  </ScatterChart>
-                </ResponsiveContainer>
-              </Card>
-            </section>
-
-            {/* Development Timeline */}
-            <section className="mb-12 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-300">
-              <Card className="p-6 border-border/40 bg-card/50 backdrop-blur-sm">
-                <div className="mb-6">
-                  <h2 className="text-xl font-bold flex items-center gap-2 mb-1 text-foreground">
-                    <Calendar className="w-5 h-5 text-primary" />
-                    Your Development Timeline
-                  </h2>
-                  <p className="text-sm text-muted-foreground">Planned milestones for your career growth</p>
-                </div>
-                <div className="space-y-4">
-                  {timelineData.map((item, idx) => {
-                    const statusColor = {
-                      completed: "bg-emerald-500/20 text-emerald-600 border-emerald-500/30",
-                      "in-progress": "bg-blue-500/20 text-blue-600 border-blue-500/30 animate-pulse",
-                      upcoming: "bg-slate-500/20 text-slate-600 border-slate-500/30",
-                    }[item.status]
-
-                    const Icon = {
-                      completed: CheckCircle2,
-                      "in-progress": Zap,
-                      upcoming: Clock,
-                    }[item.status]
-
-                    return (
-                      <div
-                        key={idx}
-                        className="flex items-center gap-4 p-4 rounded-lg border border-border/30 hover:bg-card/80 transition-colors"
-                      >
-                        <div className={`p-2 rounded-lg border ${statusColor}`}>
-                          <Icon className="w-4 h-4" />
-                        </div>
-                        <div className="flex-1">
-                          <p className="font-medium text-foreground">{item.event}</p>
-                          <p className="text-sm text-muted-foreground">{item.date}</p>
-                        </div>
-                        <div className={`px-3 py-1 rounded-full text-xs font-medium border ${statusColor}`}>
-                          {item.status.replace("-", " ").charAt(0).toUpperCase() + item.status.replace("-", " ").slice(1)}
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              </Card>
-            </section>
+                {/* Data Sources Footer */}
+                {careerDashboard?.data_sources && (
+                  <div className="mt-12 text-center text-sm text-muted-foreground pt-6 border-t border-border/30">
+                    <p className="flex items-center justify-center gap-2">
+                      <Database className="w-3 h-3" />
+                      Insights generated from: {careerDashboard.data_sources.join(" • ")}
+                    </p>
+                    <p className="mt-2 text-xs opacity-70">
+                      Last updated: {dashboardData?.generated_at ? new Date(dashboardData.generated_at).toLocaleString() : 'Just now'}
+                    </p>
+                  </div>
+                )}
+              </>
+            )}
           </div>
         </main>
       </div>

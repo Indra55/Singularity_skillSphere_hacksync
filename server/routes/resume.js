@@ -77,14 +77,14 @@ router.post("/upload", authenticateToken, upload.single("resume"), async (req, r
         console.log(`AI parsing completed in ${Date.now() - startTime}ms`);
 
         // Prepare data for database
-        const technicalSkills = Array.isArray(parsedData.technical_skills) 
-            ? parsedData.technical_skills.filter(s => typeof s === 'string') 
+        const technicalSkills = Array.isArray(parsedData.technical_skills)
+            ? parsedData.technical_skills.filter(s => typeof s === 'string')
             : [];
-        const softSkills = Array.isArray(parsedData.soft_skills) 
-            ? parsedData.soft_skills.filter(s => typeof s === 'string') 
+        const softSkills = Array.isArray(parsedData.soft_skills)
+            ? parsedData.soft_skills.filter(s => typeof s === 'string')
             : [];
-        const certifications = Array.isArray(parsedData.certifications) 
-            ? parsedData.certifications.filter(c => typeof c === 'string') 
+        const certifications = Array.isArray(parsedData.certifications)
+            ? parsedData.certifications.filter(c => typeof c === 'string')
             : [];
 
         // Single upsert to resume_info table
@@ -218,6 +218,7 @@ router.get("/info", authenticateToken, async (req, res) => {
                 professional_summary, technical_skills, soft_skills,
                 education, experience, projects, certifications,
                 completeness_score, ats_score, strengths, improvement_areas,
+                career_insights,
                 uploaded_at, updated_at
              FROM resume_info WHERE user_id = $1`,
             [req.user.id]
@@ -255,9 +256,9 @@ router.get("/analyze", authenticateToken, async (req, res) => {
         const resumeData = resumeResult.rows[0];
 
         // Check if we already have recent analysis (within 24 hours)
-        const hasRecentAnalysis = resumeData.completeness_score !== null && 
+        const hasRecentAnalysis = resumeData.completeness_score !== null &&
             resumeData.ats_score !== null &&
-            resumeData.updated_at && 
+            resumeData.updated_at &&
             (Date.now() - new Date(resumeData.updated_at).getTime()) < 24 * 60 * 60 * 1000;
 
         if (hasRecentAnalysis && !req.query.force) {

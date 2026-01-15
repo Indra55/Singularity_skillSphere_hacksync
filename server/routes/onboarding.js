@@ -67,25 +67,37 @@ router.post("/basic-info", authenticateToken, async (req, res) => {
 
 /**
  * @route POST /api/onboarding/career-goals
- * @desc Step 2: Career Info (role, current status)
+ * @desc Step 2: Career Info (role, current status, experience)
  * @access Private
  */
 router.post("/career-goals", authenticateToken, async (req, res) => {
-    const { role, status } = req.body;
+    const { role, status, experience } = req.body;
 
-    if (!role || !status) {
-        return res.status(400).json({ error: "Role and status are required" });
+    if (!role) {
+        return res.status(400).json({ error: "Role is required" });
     }
+
+    // Map frontend experience levels to database proficiency levels
+    const experienceToProficiency = {
+        'beginner': 'beginner',
+        'junior': 'beginner',
+        'mid': 'intermediate',
+        'senior': 'advanced',
+        'expert': 'advanced'
+    };
+
+    const proficiency = experience ? experienceToProficiency[experience] || null : null;
 
     try {
         await pool.query(
             `UPDATE users SET 
         career_goal_short = $1,
-        proficiency_level = $2,
+        proficiency_level = COALESCE($2, proficiency_level),
+        availability_timeline = $3,
         onboarding_step = 2,
         updated_at = now()
-      WHERE id = $3`,
-            [role, status, req.user.id]
+      WHERE id = $4`,
+            [role, proficiency, status, req.user.id]
         );
 
         res.json({ message: "Page 2 completed", next_step: 3 });

@@ -1,13 +1,20 @@
 const jwt = require("jsonwebtoken");
 const pool = require("../config/dbConfig");
 
+// Helper to extract token from request
+function extractToken(req) {
+    // First check Authorization header
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+        return authHeader.substring(7);
+    }
+    // Fall back to cookie
+    return req.cookies?.token;
+}
+
 // Middleware to verify JWT token (required authentication)
 async function authenticateToken(req, res, next) {
-    // Debug logging
-    console.log("Auth Middleware Hit");
-    console.log("Cookies received:", req.cookies ? Object.keys(req.cookies) : "None");
-
-    const token = req.cookies.token;
+    const token = extractToken(req);
 
     if (!token) {
         console.log("Auth failed: No token provided");
@@ -41,7 +48,7 @@ async function authenticateToken(req, res, next) {
 
 // Optional authentication - doesn't fail if no token
 async function optionalAuth(req, res, next) {
-    const token = req.cookies.token;
+    const token = extractToken(req);
 
     if (!token) {
         return next();
