@@ -3,7 +3,7 @@
  * Handles all communication with the backend server
  */
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5555";
+const API_BASE_URL = "";
 
 interface ApiResponse<T = unknown> {
     data?: T;
@@ -190,13 +190,17 @@ export interface ResumeInfo {
         degree: string;
         institution: string;
         field: string;
-        year: string;
+        year?: string;
+        graduation_year?: string;
+        field_of_study?: string;
     }>;
     experience: Array<{
         title: string;
         company: string;
-        start: string;
-        end: string;
+        start?: string;
+        end?: string;
+        start_date?: string;
+        end_date?: string;
         description: string;
     }>;
     projects: Array<{
