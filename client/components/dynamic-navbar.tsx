@@ -100,11 +100,11 @@ export function DynamicNavbar() {
     setIsMoreHovered(true)
   }
 
-  const isDashboardRoute = pathname?.startsWith("/dashboard") || 
-    pathname?.startsWith("/journey") || 
-    pathname?.startsWith("/resume") || 
-    pathname?.startsWith("/learning") || 
-    pathname?.startsWith("/interview") || 
+  const isDashboardRoute = pathname?.startsWith("/dashboard") ||
+    pathname?.startsWith("/journey") ||
+    pathname?.startsWith("/resume") ||
+    pathname?.startsWith("/learning") ||
+    pathname?.startsWith("/interview") ||
     pathname?.startsWith("/opportunities") ||
     pathname?.startsWith("/insights") ||
     pathname?.startsWith("/career-intelligence") ||
@@ -112,6 +112,7 @@ export function DynamicNavbar() {
     pathname?.startsWith("/peers") ||
     pathname?.startsWith("/ai-planner") ||
     pathname?.startsWith("/resume-builder") ||
+    pathname?.startsWith("/peer-learn") ||
     pathname?.startsWith("/peer-learning") ||
     pathname?.startsWith("/portfolio") ||
     pathname?.startsWith("/career-persona") ||
@@ -122,29 +123,25 @@ export function DynamicNavbar() {
 
   return (
     <nav
-      className={`fixed top-0 z-50 w-full transition-all duration-300 ease-out ${isDashboardRoute ? "dashboard-theme" : ""} ${
-        isVisible ? "translate-y-0" : "-translate-y-full"
-      } ${isCompressed ? "py-2" : "py-4"}`}
+      className={`fixed top-0 z-50 w-full transition-all duration-300 ease-out ${isDashboardRoute ? "dashboard-theme" : ""} ${isVisible ? "translate-y-0" : "-translate-y-full"
+        } ${isCompressed ? "py-2" : "py-4"}`}
     >
       {/* Glass morphism background */}
-      <div className={`absolute inset-0 backdrop-blur-xl border-b transition-colors ${
-        isDashboardRoute 
-          ? "bg-background/80 border-border/30" 
-          : "bg-background/40 border-border/20"
-      }`} />
+      <div className={`absolute inset-0 backdrop-blur-xl border-b transition-colors ${isDashboardRoute
+        ? "bg-background/80 border-border/30"
+        : "bg-background/40 border-border/20"
+        }`} />
 
       <div className="relative max-w-360 mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between">
           {/* Logo */}
           <Link
             href={isDashboardRoute ? "/dashboard" : "/"}
-            className={`flex items-center gap-2 font-bold transition-all duration-300 ${
-              isCompressed ? "text-sm" : "text-lg"
-            } ${isDashboardRoute ? "text-foreground" : ""}`}
+            className={`flex items-center gap-2 font-bold transition-all duration-300 ${isCompressed ? "text-sm" : "text-lg"
+              } ${isDashboardRoute ? "text-foreground" : ""}`}
           >
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0 transition-colors duration-300 ${
-              isMoreHovered ? "bg-white/20 text-white" : "bg-linear-to-br from-primary to-accent"
-            }`}>
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0 transition-colors duration-300 ${isMoreHovered ? "bg-white/20 text-white" : "bg-linear-to-br from-primary to-accent"
+              }`}>
               S
             </div>
             <span
@@ -158,123 +155,113 @@ export function DynamicNavbar() {
           <div
             onMouseLeave={handleNavLeave}
             onMouseEnter={handleNavEnter}
-            className={`hidden xl:flex items-center relative overflow-hidden border rounded-full backdrop-blur-md transition-all duration-500 shadow-lg w-[1100px] ${
-              isCompressed ? "px-2 py-1.5" : "px-4 py-2"
-            } ${
-              !isMoreHovered 
+            className={`hidden xl:flex items-center relative overflow-hidden border rounded-full backdrop-blur-md transition-all duration-500 shadow-lg w-[1100px] ${isCompressed ? "px-2 py-1.5" : "px-4 py-2"
+              } ${!isMoreHovered
                 ? "bg-muted/30 border-primary/20 hover:bg-muted/40 hover:shadow-xl"
                 : "border-orange-400/50 shadow-orange-500/20"
-            }`}
+              }`}
           >
             {/* Orange Background Fill (Animated) */}
-            <div 
-                className={`absolute inset-0 bg-orange-500 transition-transform duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] origin-right ${
-                    isMoreHovered ? "scale-x-100" : "scale-x-0"
+            <div
+              className={`absolute inset-0 bg-orange-500 transition-transform duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] origin-right ${isMoreHovered ? "scale-x-100" : "scale-x-0"
                 }`}
             />
 
             {/* Main Navigation Items (Visible when NOT hovered) */}
             <div className={`flex items-center flex-1 transition-all duration-300 ${isMoreHovered ? "opacity-0 translate-x-4 pointer-events-none absolute inset-y-0 left-0 w-full" : "opacity-100 translate-x-0 relative w-full"}`}>
-                {mainNavItems.map((item) => {
+              {mainNavItems.map((item) => {
                 const Icon = item.icon
                 const isActive = pathname === item.href
                 return (
-                    <Link key={item.href} href={item.href} className="flex-1 px-1">
+                  <Link key={item.href} href={item.href} className="flex-1 px-1">
                     <div
-                        className={`flex items-center justify-center gap-2 rounded-full font-medium transition-all duration-300 ${
-                        isCompressed ? "text-xs px-2 py-1" : "text-sm px-3 py-1.5"
-                        } ${
-                        isActive
-                            ? "bg-linear-to-r from-primary to-accent text-white shadow-md scale-105"
-                            : isDashboardRoute
+                      className={`flex items-center justify-center gap-2 rounded-full font-medium transition-all duration-300 ${isCompressed ? "text-xs px-2 py-1" : "text-sm px-3 py-1.5"
+                        } ${isActive
+                          ? "bg-linear-to-r from-primary to-accent text-white shadow-md scale-105"
+                          : isDashboardRoute
                             ? "text-foreground/80 hover:text-foreground hover:bg-foreground/10"
                             : "text-muted-foreground hover:text-foreground hover:bg-white/20"
                         }`}
                     >
-                        <Icon className={`shrink-0 transition-all ${isCompressed ? "w-3 h-3" : "w-4 h-4"}`} />
-                        <span className={`transition-all ${isCompressed ? "text-xs" : "text-sm"}`}>
+                      <Icon className={`shrink-0 transition-all ${isCompressed ? "w-3 h-3" : "w-4 h-4"}`} />
+                      <span className={`transition-all ${isCompressed ? "text-xs" : "text-sm"}`}>
                         {item.label}
-                        </span>
+                      </span>
                     </div>
-                    </Link>
+                  </Link>
                 )
-                })}
+              })}
             </div>
 
             {/* More Navigation Items (Visible when hovered) */}
-             <div className={`flex items-center flex-1 transition-all duration-300 ${!isMoreHovered ? "opacity-0 -translate-x-4 pointer-events-none absolute inset-y-0 left-0 w-full" : "opacity-100 translate-x-0 relative w-full"}`}>
-                {moreNavItems.map((item) => {
-                  const Icon = item.icon
-                  const isActive = pathname === item.href
-                  return (
-                    <Link key={item.href} href={item.href} className="flex-1 px-1">
-                      <div
-                        className={`flex items-center justify-center gap-2 rounded-full font-medium transition-all duration-300 z-10 relative w-full ${
-                          isCompressed ? "text-xs px-2 py-1" : "text-sm px-3 py-1.5"
-                        } ${
-                           isActive
-                              ? "bg-white text-orange-600 shadow-md"
-                              : "text-white/80 hover:text-white hover:bg-white/10"
+            <div className={`flex items-center flex-1 transition-all duration-300 ${!isMoreHovered ? "opacity-0 -translate-x-4 pointer-events-none absolute inset-y-0 left-0 w-full" : "opacity-100 translate-x-0 relative w-full"}`}>
+              {moreNavItems.map((item) => {
+                const Icon = item.icon
+                const isActive = pathname === item.href
+                return (
+                  <Link key={item.href} href={item.href} className="flex-1 px-1">
+                    <div
+                      className={`flex items-center justify-center gap-2 rounded-full font-medium transition-all duration-300 z-10 relative w-full ${isCompressed ? "text-xs px-2 py-1" : "text-sm px-3 py-1.5"
+                        } ${isActive
+                          ? "bg-white text-orange-600 shadow-md"
+                          : "text-white/80 hover:text-white hover:bg-white/10"
                         }`}
-                      >
-                        <Icon className={`shrink-0 transition-all ${isCompressed ? "w-3 h-3" : "w-4 h-4"}`} />
-                        <span className={`transition-all ${isCompressed ? "text-xs" : "text-sm"}`}>
-                          {item.label}
-                        </span>
-                      </div>
-                    </Link>
-                  )
-                })}
+                    >
+                      <Icon className={`shrink-0 transition-all ${isCompressed ? "w-3 h-3" : "w-4 h-4"}`} />
+                      <span className={`transition-all ${isCompressed ? "text-xs" : "text-sm"}`}>
+                        {item.label}
+                      </span>
+                    </div>
+                  </Link>
+                )
+              })}
             </div>
-            
+
             {/* Divider */}
             <div className={`h-4 w-px mx-4 transition-colors duration-300 z-10 relative ${isMoreHovered ? "bg-white/30" : "bg-foreground/20"}`} />
 
             {/* More Trigger Button */}
-            <div 
+            <div
               className="flex items-center z-10 relative"
               onMouseEnter={handleMoreEnter}
             >
               <div
-                className={`flex items-center gap-2 rounded-full font-medium transition-all duration-300 cursor-pointer ${
-                  isCompressed ? "text-xs px-2 py-1" : "text-sm px-3 py-1.5"
-                } ${
-                  isMoreHovered
+                className={`flex items-center gap-2 rounded-full font-medium transition-all duration-300 cursor-pointer ${isCompressed ? "text-xs px-2 py-1" : "text-sm px-3 py-1.5"
+                  } ${isMoreHovered
                     ? "text-white bg-white/10"
                     : isDashboardRoute
                       ? "text-foreground/80 hover:text-foreground hover:bg-foreground/10"
                       : "text-muted-foreground hover:text-foreground hover:bg-white/20"
-                }`}
+                  }`}
               >
                 {isMoreHovered ? <ArrowLeft className={`shrink-0 transition-all ${isCompressed ? "w-3 h-3" : "w-4 h-4"}`} /> : <MoreHorizontal className={`shrink-0 transition-all ${isCompressed ? "w-3 h-3" : "w-4 h-4"}`} />}
                 <span className={`hidden lg:inline transition-all ${isCompressed ? "text-xs" : "text-sm"}`}>
-                    {isMoreHovered ? "Back" : "More"}
+                  {isMoreHovered ? "Back" : "More"}
                 </span>
               </div>
             </div>
           </div>
 
           {/* Mobile Placeholder (Visible on md/lg, hidden on xl where new nav exists) */}
-           <div
-            className={`hidden md:flex xl:hidden items-center gap-1 bg-muted/30 border border-primary/20 rounded-full backdrop-blur-md shadow-lg ${
-              isCompressed ? "px-2 py-1.5" : "px-5 py-2.5"
-            }`}
+          <div
+            className={`hidden md:flex xl:hidden items-center gap-1 bg-muted/30 border border-primary/20 rounded-full backdrop-blur-md shadow-lg ${isCompressed ? "px-2 py-1.5" : "px-5 py-2.5"
+              }`}
           >
-             
-             {mainNavItems.slice(0, 4).map((item) => {
-               const Icon = item.icon
-               const isActive = pathname === item.href
-               return (
-                  <Link key={item.href} href={item.href}>
-                    <Button variant={isActive ? "default" : "ghost"} size="sm" className="gap-2 rounded-full">
-                      <Icon className="w-4 h-4" />
-                      <span className="hidden lg:inline">{item.label}</span>
-                    </Button>
-                  </Link>
-               )
-             })}
-             
-             {/* Dropdown for smaller desktops */}
+
+            {mainNavItems.slice(0, 4).map((item) => {
+              const Icon = item.icon
+              const isActive = pathname === item.href
+              return (
+                <Link key={item.href} href={item.href}>
+                  <Button variant={isActive ? "default" : "ghost"} size="sm" className="gap-2 rounded-full">
+                    <Icon className="w-4 h-4" />
+                    <span className="hidden lg:inline">{item.label}</span>
+                  </Button>
+                </Link>
+              )
+            })}
+
+            {/* Dropdown for smaller desktops */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm" className="gap-2 rounded-full">
@@ -283,12 +270,12 @@ export function DynamicNavbar() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
                 {moreNavItems.map((item) => (
-                   <DropdownMenuItem key={item.href} asChild>
-                      <Link href={item.href} className="flex gap-2">
-                        <item.icon className="w-4 h-4" />
-                        {item.label}
-                      </Link>
-                   </DropdownMenuItem>
+                  <DropdownMenuItem key={item.href} asChild>
+                    <Link href={item.href} className="flex gap-2">
+                      <item.icon className="w-4 h-4" />
+                      {item.label}
+                    </Link>
+                  </DropdownMenuItem>
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
@@ -368,11 +355,10 @@ export function DynamicNavbar() {
                       <Link key={item.href} href={item.href} onClick={() => setIsMobileMenuOpen(false)}>
                         <motion.div
                           whileTap={{ scale: 0.98 }}
-                          className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all ${
-                            isActive
-                              ? "bg-linear-to-r from-primary to-accent text-white shadow-lg"
-                              : "text-foreground/80 hover:bg-foreground/5"
-                          }`}
+                          className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all ${isActive
+                            ? "bg-linear-to-r from-primary to-accent text-white shadow-lg"
+                            : "text-foreground/80 hover:bg-foreground/5"
+                            }`}
                         >
                           <Icon className="w-5 h-5 shrink-0" />
                           <span>{item.label}</span>
@@ -392,11 +378,10 @@ export function DynamicNavbar() {
                         <Link key={item.href} href={item.href} onClick={() => setIsMobileMenuOpen(false)}>
                           <motion.div
                             whileTap={{ scale: 0.95 }}
-                            className={`flex flex-col items-center justify-center gap-2 p-4 rounded-2xl border transition-all ${
-                              isActive
-                                ? "bg-primary/10 border-primary text-primary"
-                                : "bg-muted/30 border-border/20 text-muted-foreground hover:border-primary/30 hover:text-foreground"
-                            }`}
+                            className={`flex flex-col items-center justify-center gap-2 p-4 rounded-2xl border transition-all ${isActive
+                              ? "bg-primary/10 border-primary text-primary"
+                              : "bg-muted/30 border-border/20 text-muted-foreground hover:border-primary/30 hover:text-foreground"
+                              }`}
                           >
                             <Icon className="w-5 h-5" />
                             <span className="text-xs font-medium">{item.label}</span>
