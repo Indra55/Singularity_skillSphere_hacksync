@@ -5,200 +5,264 @@ import { ProtectedRoute } from "@/components/protected-route"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Brain, Calendar, Target, TrendingUp, CheckCircle2, Clock, Sparkles } from "lucide-react"
-import { useState } from "react"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Brain, Sparkles, Loader2, TrendingUp, CheckCircle2, Clock, Target, BarChart3 } from "lucide-react"
+import { useState, useEffect } from "react"
+import { generateRoadmap, getRoadmap, getMilestones, getTasks, getProgress } from "@/lib/plannerApi"
+import { RoadmapTimeline } from "@/components/ai-planner/RoadmapTimeline"
+import { TaskKanban } from "@/components/ai-planner/TaskKanban"
+import { ProgressDashboard } from "@/components/ai-planner/ProgressDashboard"
 import "@/app/dashboard/dashboard.css"
 
-interface PlanItem {
+interface Roadmap {
   id: string
   title: string
   description: string
-  priority: "high" | "medium" | "low"
-  deadline: string
-  status: "pending" | "in-progress" | "completed"
-  category: string
+  total_tasks: number
+  completed_tasks: number
+  progress_percentage: number
+  estimated_hours: number
+}
+
+interface Task {
+  id: string
+  title: string
+  description: string
+  status: 'todo' | 'in-progress' | 'completed'
+  priority: 'low' | 'medium' | 'high' | 'critical'
+  difficulty: 'beginner' | 'intermediate' | 'advanced'
+  estimated_hours: number
+  milestone_title: string
+  dependencies: any[]
+  is_blocked: boolean
+}
+
+interface Milestone {
+  id: string
+  title: string
+  description: string
+  sequence_order: number
+  progress_percentage: number
+  total_tasks: number
+  completed_tasks: number
 }
 
 export default function AIPlannerPage() {
-  const [plans] = useState<PlanItem[]>([
-    {
-      id: "1",
-      title: "Complete System Design Mastery Course",
-      description: "Finish all 5 modules covering distributed systems, scalability, and architecture patterns",
-      priority: "high",
-      deadline: "2024-02-15",
-      status: "in-progress",
-      category: "Learning",
-    },
-    {
-      id: "2",
-      title: "Build Portfolio Project: E-commerce Platform",
-      description: "Create a full-stack e-commerce platform with microservices architecture",
-      priority: "high",
-      deadline: "2024-02-28",
-      status: "pending",
-      category: "Portfolio",
-    },
-    {
-      id: "3",
-      title: "Practice 10 Mock Interviews",
-      description: "Complete behavioral and technical interview practice sessions",
-      priority: "medium",
-      deadline: "2024-03-01",
-      status: "pending",
-      category: "Interview Prep",
-    },
-    {
-      id: "4",
-      title: "Update Resume with Latest Projects",
-      description: "Add 3 new projects and optimize for ATS systems",
-      priority: "medium",
-      deadline: "2024-02-20",
-      status: "in-progress",
-      category: "Resume",
-    },
-    {
-      id: "5",
-      title: "Complete AWS Certification",
-      description: "Study and pass AWS Solutions Architect Associate exam",
-      priority: "low",
-      deadline: "2024-04-01",
-      status: "pending",
-      category: "Certification",
-    },
-  ])
+  const [roadmap, setRoadmap] = useState<Roadmap | null>(null)
+  const [tasks, setTasks] = useState<Task[]>([])
+  const [milestones, setMilestones] = useState<Milestone[]>([])
+  const [progress, setProgress] = useState<any>(null)
+  const [loading, setLoading] = useState(false)
+  const [generating, setGenerating] = useState(false)
+  const [activeTab, setActiveTab] = useState("kanban")
 
-  const stats = {
-    totalPlans: plans.length,
-    completed: plans.filter((p) => p.status === "completed").length,
-    inProgress: plans.filter((p) => p.status === "in-progress").length,
-    highPriority: plans.filter((p) => p.priority === "high").length,
+  useEffect(() => {
+    loadData()
+  }, [])
+
+  async function loadData() {
+    setLoading(true)
+    try {
+      const [roadmapRes, tasksRes, milestonesRes, progressRes] = await Promise.all([
+        getRoadmap(),
+        getTasks(),
+        getMilestones(),
+        getProgress()
+      ])
+
+      setRoadmap(roadmapRes.roadmap)
+      setTasks(tasksRes.tasks || [])
+      setMilestones(milestonesRes.milestones || [])
+      setProgress(progressRes.progress)
+    } catch (error) {
+      console.error("Error loading data:", error)
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const priorityColors = {
-    high: "bg-red-500/20 text-red-600 border-red-500/30",
-    medium: "bg-amber-500/20 text-amber-600 border-amber-500/30",
-    low: "bg-blue-500/20 text-blue-600 border-blue-500/30",
+  async function handleGenerateRoadmap() {
+    setGenerating(true)
+    try {
+      await generateRoadmap()
+      await loadData()
+    } catch (error: any) {
+      alert(error.message || "Failed to generate roadmap")
+    } finally {
+      setGenerating(false)
+    }
   }
 
-  const statusColors = {
-    pending: "bg-gray-500/20 text-gray-600",
-    "in-progress": "bg-primary/20 text-primary",
-    completed: "bg-emerald-500/20 text-emerald-600",
+  if (loading && !roadmap) {
+    return (
+      <ProtectedRoute>
+        <div className="dashboard-theme min-h-screen bg-background">
+          <DynamicNavbar />
+          <main className="min-h-screen flex items-center justify-center">
+            <div className="text-center">
+              <Loader2 className="w-12 h-12 animate-spin mx-auto mb-4 text-primary" />
+              <p className="text-muted-foreground">Loading your roadmap...</p>
+            </div>
+          </main>
+        </div>
+      </ProtectedRoute>
+    )
   }
 
   return (
     <ProtectedRoute>
-      <div className="dashboard-theme">
+      <div className="dashboard-theme min-h-screen bg-background">
         <DynamicNavbar />
-        <main className="min-h-screen bg-background pt-28 pb-20">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            {/* Header */}
+        <main className="pt-24 pb-12 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-7xl mx-auto">
+            {/* Header Section */}
             <section className="mb-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
               <div className="flex items-center justify-between mb-6">
                 <div>
                   <div className="flex items-center gap-3 mb-2">
                     <Brain className="w-8 h-8 text-primary" />
-                    <h1 className="text-4xl font-bold">AI Career Planner</h1>
+                    <h1 className="text-4xl font-bold">AI Career Roadmap</h1>
                   </div>
                   <p className="text-muted-foreground">
-                    Your personalized roadmap powered by AI recommendations
+                    {roadmap ? "Your personalized learning journey" : "Generate your AI-powered career roadmap"}
                   </p>
                 </div>
-                <Button className="gap-2 bg-primary hover:bg-primary/90">
-                  <Sparkles className="w-4 h-4" />
-                  Generate New Plan
-                </Button>
-              </div>
-
-              {/* Stats */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <Card className="p-4 border-border/40 bg-card/50 backdrop-blur-sm">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground mb-1">Total Plans</p>
-                      <p className="text-2xl font-bold text-foreground">{stats.totalPlans}</p>
-                    </div>
-                    <Target className="w-6 h-6 text-primary opacity-70" />
-                  </div>
-                </Card>
-                <Card className="p-4 border-border/40 bg-card/50 backdrop-blur-sm">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground mb-1">Completed</p>
-                      <p className="text-2xl font-bold text-foreground">{stats.completed}</p>
-                    </div>
-                    <CheckCircle2 className="w-6 h-6 text-emerald-500 opacity-70" />
-                  </div>
-                </Card>
-                <Card className="p-4 border-border/40 bg-card/50 backdrop-blur-sm">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground mb-1">In Progress</p>
-                      <p className="text-2xl font-bold text-foreground">{stats.inProgress}</p>
-                    </div>
-                    <Clock className="w-6 h-6 text-primary opacity-70" />
-                  </div>
-                </Card>
-                <Card className="p-4 border-border/40 bg-card/50 backdrop-blur-sm">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground mb-1">High Priority</p>
-                      <p className="text-2xl font-bold text-foreground">{stats.highPriority}</p>
-                    </div>
-                    <TrendingUp className="w-6 h-6 text-red-500 opacity-70" />
-                  </div>
-                </Card>
-              </div>
-            </section>
-
-            {/* Plans List */}
-            <section className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-100">
-              <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-bold">Your Career Plan</h2>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm">
-                    Filter
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    Sort
-                  </Button>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                {plans.map((plan) => (
-                  <Card
-                    key={plan.id}
-                    className="p-6 border-border/40 bg-card/50 backdrop-blur-sm hover:bg-card/60 transition-all duration-300"
+                {!roadmap && (
+                  <Button
+                    className="gap-2 bg-primary hover:bg-primary/90"
+                    onClick={handleGenerateRoadmap}
+                    disabled={generating}
                   >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <h3 className="text-xl font-semibold text-foreground">{plan.title}</h3>
-                          <Badge className={priorityColors[plan.priority]}>{plan.priority}</Badge>
-                          <Badge className={statusColors[plan.status]}>{plan.status}</Badge>
-                        </div>
-                        <p className="text-muted-foreground mb-4">{plan.description}</p>
-                        <div className="flex items-center gap-4 text-sm">
-                          <div className="flex items-center gap-2">
-                            <Calendar className="w-4 h-4 text-muted-foreground" />
-                            <span className="text-muted-foreground">Due: {plan.deadline}</span>
-                          </div>
-                          <Badge variant="secondary">{plan.category}</Badge>
-                        </div>
+                    {generating ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-4 h-4" />
+                        Generate Roadmap
+                      </>
+                    )}
+                  </Button>
+                )}
+              </div>
+
+              {/* Stats Cards */}
+              {roadmap && (
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <Card className="p-4 border-border/40 bg-card/50 backdrop-blur-sm">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-muted-foreground mb-1">Total Tasks</p>
+                        <p className="text-2xl font-bold text-foreground">{roadmap.total_tasks}</p>
                       </div>
-                      <div className="flex gap-2 ml-4">
-                        <Button variant="outline" size="sm">
-                          Edit
-                        </Button>
-                        <Button size="sm">Start</Button>
-                      </div>
+                      <Target className="w-6 h-6 text-primary opacity-70" />
                     </div>
                   </Card>
-                ))}
-              </div>
+                  <Card className="p-4 border-border/40 bg-card/50 backdrop-blur-sm">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-muted-foreground mb-1">Completed</p>
+                        <p className="text-2xl font-bold text-foreground">{roadmap.completed_tasks}</p>
+                      </div>
+                      <CheckCircle2 className="w-6 h-6 text-emerald-500 opacity-70" />
+                    </div>
+                  </Card>
+                  <Card className="p-4 border-border/40 bg-card/50 backdrop-blur-sm">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-muted-foreground mb-1">Progress</p>
+                        <p className="text-2xl font-bold text-foreground">{roadmap.progress_percentage}%</p>
+                      </div>
+                      <TrendingUp className="w-6 h-6 text-primary opacity-70" />
+                    </div>
+                  </Card>
+                  <Card className="p-4 border-border/40 bg-card/50 backdrop-blur-sm">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-muted-foreground mb-1">Est. Hours</p>
+                        <p className="text-2xl font-bold text-foreground">{roadmap.estimated_hours}h</p>
+                      </div>
+                      <Clock className="w-6 h-6 text-amber-500 opacity-70" />
+                    </div>
+                  </Card>
+                </div>
+              )}
             </section>
+
+            {/* Empty State */}
+            {!roadmap && !generating && (
+              <Card className="p-12 text-center border-border/40 bg-card/50 backdrop-blur-sm">
+                <Brain className="w-20 h-20 mx-auto mb-4 text-primary opacity-50" />
+                <h2 className="text-2xl font-bold mb-2">No Roadmap Yet</h2>
+                <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                  Click "Generate Roadmap" to create a personalized learning path based on your career goals and skills
+                </p>
+                <Button
+                  size="lg"
+                  className="gap-2"
+                  onClick={handleGenerateRoadmap}
+                  disabled={generating}
+                >
+                  <Sparkles className="w-5 h-5" />
+                  Generate My Roadmap
+                </Button>
+              </Card>
+            )}
+
+            {/* Main Content */}
+            {roadmap && (
+              <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-200">
+                {/* Roadmap Title */}
+                <Card className="p-6 border-border/40 bg-card/50 backdrop-blur-sm">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h2 className="text-2xl font-bold mb-2">{roadmap.title}</h2>
+                      <p className="text-muted-foreground">{roadmap.description}</p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleGenerateRoadmap}
+                      disabled={generating}
+                    >
+                      {generating ? "Generating..." : "New Roadmap"}
+                    </Button>
+                  </div>
+                </Card>
+
+                {/* Tabs for Different Views */}
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                  <TabsList className="grid w-full grid-cols-3">
+                    <TabsTrigger value="kanban" className="gap-2">
+                      <Target className="w-4 h-4" />
+                      Kanban Board
+                    </TabsTrigger>
+                    <TabsTrigger value="timeline" className="gap-2">
+                      <Clock className="w-4 h-4" />
+                      Timeline
+                    </TabsTrigger>
+                    <TabsTrigger value="progress" className="gap-2">
+                      <BarChart3 className="w-4 h-4" />
+                      Progress
+                    </TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="kanban" className="mt-6">
+                    <TaskKanban tasks={tasks} onUpdate={loadData} />
+                  </TabsContent>
+
+                  <TabsContent value="timeline" className="mt-6">
+                    <RoadmapTimeline milestones={milestones} tasks={tasks} />
+                  </TabsContent>
+
+                  <TabsContent value="progress" className="mt-6">
+                    <ProgressDashboard progress={progress} tasks={tasks} onUpdate={loadData} />
+                  </TabsContent>
+                </Tabs>
+              </div>
+            )}
           </div>
         </main>
       </div>
