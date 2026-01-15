@@ -50,10 +50,12 @@ export default function LinkedInJobsPage() {
                 setLoading(true)
                 console.log("Frontend: Fetching jobs from /api/jobs/linkedin")
 
+                const token = localStorage.getItem("token")
                 const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/jobs/linkedin`, {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
+                        "Authorization": `Bearer ${token}`
                     },
                 })
 
@@ -104,10 +106,12 @@ export default function LinkedInJobsPage() {
 
         setSavingApplication(true)
         try {
+            const token = localStorage.getItem("token")
             const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/jobs/applications`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
                 },
                 body: JSON.stringify({
                     job_id: selectedJob.id,
