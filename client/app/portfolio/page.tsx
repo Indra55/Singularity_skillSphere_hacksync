@@ -336,13 +336,27 @@ function generateDownloadableHTML(config: PortfolioConfig): string {
 // ============================================================================
 
 export default function PortfolioPage() {
-  const [isDark, setIsDark] = useState(true)
+  // Start with light mode, only respect user's explicit choice
+  const [isDark, setIsDark] = useState(false)
   const [activeSection, setActiveSection] = useState("")
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [config, setConfig] = useState<PortfolioConfig | null>(null)
   const [downloading, setDownloading] = useState(false)
   const sectionsRef = useRef<(HTMLElement | null)[]>([])
+
+  // Load saved theme preference on mount (client-side only)
+  useEffect(() => {
+    const stored = localStorage.getItem('portfolio-theme')
+    if (stored === 'dark') {
+      setIsDark(true)
+    }
+  }, [])
+
+  // Save theme preference when user toggles
+  useEffect(() => {
+    localStorage.setItem('portfolio-theme', isDark ? 'dark' : 'light')
+  }, [isDark])
 
   useEffect(() => {
     async function fetchResumeData() {
@@ -457,6 +471,23 @@ export default function PortfolioPage() {
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-background text-foreground relative">
+        {/* BACK BUTTON - Resets theme and navigates to dashboard */}
+        <button
+          onClick={() => {
+            // Remove dark class from html to reset theme
+            document.documentElement.classList.remove('dark')
+            document.documentElement.style.colorScheme = 'light'
+            // Clear portfolio theme preference
+            localStorage.removeItem('portfolio-theme')
+            // Navigate back
+            window.location.href = '/dashboard'
+          }}
+          className="fixed top-6 left-6 z-20 flex items-center gap-2 px-4 py-2 bg-muted/80 backdrop-blur-sm text-foreground rounded-full hover:bg-muted transition-colors border border-border"
+        >
+          <span className="text-lg">←</span>
+          <span className="text-sm font-medium">Back</span>
+        </button>
+
         {/* DOWNLOAD BUTTON */}
         <button
           onClick={handleDownload}
