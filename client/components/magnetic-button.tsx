@@ -10,6 +10,7 @@ interface MagneticButtonProps {
   size?: "default" | "lg"
   onClick?: () => void
   type?: "submit" | "reset" | "button"
+  disabled?: boolean
 }
 
 export function MagneticButton({
@@ -19,6 +20,7 @@ export function MagneticButton({
   size = "default",
   onClick,
   type,
+  disabled = false,
 }: MagneticButtonProps) {
   const ref = useRef<HTMLButtonElement>(null)
   const positionRef = useRef({ x: 0, y: 0 })
