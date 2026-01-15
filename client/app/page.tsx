@@ -324,10 +324,10 @@ export default function Home() {
                 { label: "Resume Builder", href: "/resume-builder", icon: "📄", desc: "Build & optimize your resume" },
                 { label: "Peer Learning Circle", href: "/peer-learning", icon: "👥", desc: "Learn with peers" },
                 { label: "Portfolio Builder", href: "/portfolio", icon: "💼", desc: "Showcase your projects" },
-                { label: "Career Persona", href: "/career-persona", icon: "✨", desc: "Discover your persona" },
                 { label: "Job Trend Tracker", href: "/job-trends", icon: "📈", desc: "Track market trends" },
                 { label: "LinkedIn Jobs", href: "/linkedin-jobs", icon: "🔔", desc: "Job notifications" },
                 { label: "Coding Practice", href: "/coding-practice", icon: "💻", desc: "Practice coding questions" },
+                { label: "Opportunities", href: "/opportunities", icon: "🎯", desc: "Personalized role matches" },
               ].map((feature, idx) => (
                 <a
                   key={idx}

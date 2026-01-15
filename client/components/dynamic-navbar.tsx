@@ -21,18 +21,16 @@ import {
 // Main navigation items (always visible)
 const mainNavItems = [
   { label: "Dashboard", href: "/dashboard", icon: TrendingUp },
-  { label: "AI Planner", href: "/ai-planner", icon: Brain },
+  { label: "AI Planned Learning", href: "/ai-planner", icon: Brain },
   { label: "Resume Builder", href: "/resume-builder", icon: FileText },
-  { label: "Learning", href: "/learning", icon: BookOpen },
+  { label: "Peer Learning", href: "/peer-learning", icon: Users },
+  { label: "Portfolio", href: "/portfolio", icon: Briefcase },
   { label: "Interview", href: "/interview", icon: Mic },
-  { label: "Opportunities", href: "/opportunities", icon: Users },
 ]
 
 // Additional features in dropdown
 const moreNavItems = [
-  { label: "Peer Learning", href: "/peer-learning", icon: Users },
-  { label: "Portfolio", href: "/portfolio", icon: Briefcase },
-  { label: "Persona", href: "/career-persona", icon: Sparkles },
+  { label: "Opportunities", href: "/opportunities", icon: Users },
   { label: "Trends", href: "/job-trends", icon: TrendIcon },
   { label: "Jobs", href: "/linkedin-jobs", icon: Bell },
   { label: "Code", href: "/coding-practice", icon: Code },

@@ -1,85 +1,77 @@
-"use client"
+ "use client"
+ 
+ import Link from "next/link"
+ import { DynamicNavbar } from "@/components/dynamic-navbar"
+ import { ProtectedRoute } from "@/components/protected-route"
+ import { Card } from "@/components/ui/card"
+ import { Button } from "@/components/ui/button"
+ import { Badge } from "@/components/ui/badge"
+ import {
+   ResponsiveContainer,
+   BarChart,
+   Bar,
+   CartesianGrid,
+   XAxis,
+   YAxis,
+   Tooltip,
+   Cell,
+ } from "recharts"
+ import {
+   Sparkles,
+   Target,
+   TrendingUp,
+   DollarSign,
+   Clock,
+   Layers,
+   AlertCircle,
+   Loader2,
+   ArrowRight,
+ } from "lucide-react"
+ import "@/app/dashboard/dashboard.css"
+ import {
+   getDashboardData,
+   type DashboardData,
+ } from "@/lib/api"
+ import { useCallback, useEffect, useState } from "react"
+ 
+ export default function OpportunitiesPage() {
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-import { DynamicNavbar } from "@/components/dynamic-navbar"
-import { ProtectedRoute } from "@/components/protected-route"
-import { Card } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { ArrowRight, MapPin, Briefcase, DollarSign, Star } from "lucide-react"
-import { useState } from "react"
-import "@/app/dashboard/dashboard.css"
+  const fetchDashboardData = useCallback(async () => {
+    setLoading(true)
+    setError(null)
 
-const opportunities = [
-  {
-    id: 1,
-    role: "Senior SDE - System Design",
-    company: "TechCorp",
-    location: "SF/Remote",
-    salary: "$200-250K",
-    match: 92,
-    benefits: ["4 weeks PTO", "Stock Options", "Learning Budget"],
-    why: "85% skills match. Growth potential 18% YoY. Strong mentor access.",
-    urgency: "Hiring Now",
-    tags: ["Systems", "Distributed", "Backend"],
-  },
-  {
-    id: 2,
-    role: "Tech Lead - Infrastructure",
-    company: "CloudScale",
-    location: "NYC/Hybrid",
-    salary: "$180-220K",
-    match: 78,
-    benefits: ["3 weeks PTO", "Relocation", "Flexible Hours"],
-    why: "Perfect for leadership growth. 65% current skills. Bridges gap perfectly.",
-    urgency: "Closing Soon",
-    tags: ["Infrastructure", "Leadership", "Scale"],
-  },
-  {
-    id: 3,
-    role: "Staff Engineer",
-    company: "FinTech Inc",
-    location: "Remote",
-    salary: "$250-300K",
-    match: 65,
-    benefits: ["5 weeks PTO", "Signing Bonus", "Equity"],
-    why: "Stretch opportunity. Build the gap. High impact. Executive visibility.",
-    urgency: "Open Position",
-    tags: ["Architecture", "Advanced", "Strategy"],
-  },
-  {
-    id: 4,
-    role: "Engineering Manager",
-    company: "DataFlow",
-    location: "Boston/Remote",
-    salary: "$190-230K",
-    match: 72,
-    benefits: ["Flexible PTO", "Professional Dev", "Conference Budget"],
-    why: "Leadership track starter. Your communication skills shine here.",
-    urgency: "Hiring Now",
-    tags: ["Management", "Leadership", "Growth"],
-  },
-]
+    try {
+      const dashboardResult = await getDashboardData()
 
-const urgencyConfig = {
-  "Hiring Now": { color: "bg-emerald-500/20 text-emerald-600 border-emerald-500/30" },
-  "Closing Soon": { color: "bg-red-500/20 text-red-600 border-red-500/30" },
-  "Open Position": { color: "bg-blue-500/20 text-blue-600 border-blue-500/30" },
-  "Accepting Apps": { color: "bg-amber-500/20 text-amber-600 border-amber-500/30" },
-}
+      if (dashboardResult.data) {
+        setDashboardData(dashboardResult.data)
+      } else if (dashboardResult.error) {
+        console.error("Dashboard API error (opportunities):", dashboardResult.error)
+        setError(dashboardResult.error)
+      }
+    } catch (err) {
+      console.error("Failed to fetch dashboard data (opportunities):", err)
+      setError("Failed to load opportunities. Please try again.")
+    } finally {
+      setLoading(false)
+    }
+  }, [])
 
-export default function OpportunitiesPage() {
-  const [selectedFilter, setSelectedFilter] = useState("all")
-  const [savedOpportunities, setSavedOpportunities] = useState<number[]>([])
+  useEffect(() => {
+    fetchDashboardData()
+  }, [fetchDashboardData])
 
-  const filteredOpportunities = opportunities.filter((opp) => {
-    if (selectedFilter === "high") return opp.match >= 80
-    if (selectedFilter === "saved") return savedOpportunities.includes(opp.id)
-    return true
-  })
+  const careerDashboard = dashboardData?.career_dashboard
 
-  const toggleSave = (id: number) => {
-    setSavedOpportunities((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
-  }
+  const careerPathsData = careerDashboard?.recommended_career_paths?.map(path => ({
+    name: path.title.length > 20 ? path.title.substring(0, 18) + "..." : path.title,
+    fullName: path.title,
+    matchScore: path.match_score,
+    fill: path.match_score >= 90 ? "#10b981" : path.match_score >= 80 ? "#3b82f6" : "#f59e0b",
+  })) || []
 
   return (
     <ProtectedRoute>
@@ -97,122 +89,170 @@ export default function OpportunitiesPage() {
                   </p>
                 </div>
               </div>
-
-              {/* Filter Tabs */}
-              <div className="flex gap-2 flex-wrap">
-                {[
-                  { id: "all", label: "All Opportunities", count: opportunities.length },
-                  {
-                    id: "high",
-                    label: "High Match (80%+)",
-                    count: opportunities.filter((o) => o.match >= 80).length,
-                  },
-                  { id: "saved", label: "Saved", count: savedOpportunities.length },
-                ].map((filter) => (
-                  <Button
-                    key={filter.id}
-                    onClick={() => setSelectedFilter(filter.id)}
-                    variant={selectedFilter === filter.id ? "default" : "outline"}
-                    className="gap-2"
-                  >
-                    {filter.label}
-                    <Badge variant="secondary">{filter.count}</Badge>
-                  </Button>
-                ))}
-              </div>
             </section>
 
-            {/* Opportunities Grid */}
-            <section className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-100">
-              {filteredOpportunities.map((opp, idx) => (
-                <Card
-                  key={opp.id}
-                  className="p-6 border-border/40 bg-card/50 backdrop-blur-sm hover:bg-card/60 transition-all duration-300 hover:shadow-lg cursor-pointer group animate-in fade-in slide-in-from-bottom-4"
-                  style={{ animationDelay: `${50 * idx}ms` }}
-                >
-                  <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-4">
-                    {/* Job Header */}
-                    <div className="lg:col-span-2">
-                      <div className="flex items-start justify-between mb-2">
-                        <div>
-                          <h3 className="text-lg font-bold group-hover:text-primary transition-colors text-foreground">{opp.role}</h3>
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
-                            <Briefcase className="w-4 h-4" />
-                            <span>{opp.company}</span>
-                            <MapPin className="w-4 h-4 ml-2" />
-                            <span>{opp.location}</span>
+            {error && (
+              <div className="mb-6 p-4 rounded-lg bg-destructive/10 border border-destructive/30 text-destructive flex items-center gap-2">
+                <AlertCircle className="w-5 h-5" />
+                <span>{error}</span>
+              </div>
+            )}
+
+            {loading ? (
+              <div className="flex items-center justify-center min-h-[50vh]">
+                <div className="flex flex-col items-center gap-4">
+                  <Loader2 className="w-10 h-10 animate-spin text-primary" />
+                  <p className="text-muted-foreground">Loading personalized opportunities...</p>
+                </div>
+              </div>
+            ) : careerDashboard?.recommended_career_paths && careerDashboard.recommended_career_paths.length > 0 ? (
+              <>
+                {/* Career Match Chart (moved from dashboard) */}
+                <Card className="p-6 border-border/40 bg-card/50 backdrop-blur-sm mb-10">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <div className="p-2 rounded-lg bg-emerald-500/10">
+                        <Sparkles className="w-5 h-5 text-emerald-500" />
+                      </div>
+                      <h3 className="text-lg font-semibold text-foreground">Match Score Analysis</h3>
+                    </div>
+                    <span className="px-3 py-1 text-xs font-medium bg-primary/10 text-primary rounded-full flex items-center gap-1">
+                      <Sparkles className="w-3 h-3" /> AI-Powered
+                    </span>
+                  </div>
+                  <div className="h-[250px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={careerPathsData} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--color-border))" horizontal={true} vertical={false} />
+                        <XAxis type="number" domain={[0, 100]} hide />
+                        <YAxis type="category" dataKey="name" width={140} tick={{ fontSize: 12, fill: "hsl(var(--color-muted-foreground))" }} />
+                        <Tooltip
+                          cursor={{ fill: 'transparent' }}
+                          content={({ active, payload }) => {
+                            if (active && payload && payload.length) {
+                              const data = payload[0].payload;
+                              return (
+                                <div className="bg-popover border border-border p-3 rounded-lg shadow-xl">
+                                  <p className="font-bold text-foreground">{data.fullName}</p>
+                                  <p className="text-sm text-muted-foreground">Match Score: <span className="font-bold text-primary">{data.matchScore}%</span></p>
+                                </div>
+                              );
+                            }
+                            return null;
+                          }}
+                        />
+                        <Bar dataKey="matchScore" radius={[0, 4, 4, 0]} barSize={24}>
+                          {careerPathsData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.fill} />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </Card>
+
+                {/* Career Cards (moved from dashboard) */}
+                <section className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-100">
+                  {careerDashboard.recommended_career_paths.map((path, idx) => (
+                    <Card
+                      key={idx}
+                      className="p-6 border-border/40 bg-card/50 backdrop-blur-sm hover:bg-card/80 transition-all duration-300 hover:shadow-lg group relative overflow-hidden"
+                    >
+                      <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-primary to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+
+                      <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-4">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <h3 className="text-xl font-bold text-foreground group-hover:text-primary transition-colors">
+                              {path.title}
+                            </h3>
+                            {idx === 0 && (
+                              <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-primary/20 text-primary border border-primary/20">
+                                Top Pick
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-sm text-muted-foreground mb-4">{path.reasoning}</p>
+                        </div>
+                        <div className="flex flex-col items-end gap-2 min-w-[120px]">
+                          <div className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm font-bold ${path.match_score >= 90 ? 'bg-emerald-500/10 text-emerald-600' :
+                            path.match_score >= 80 ? 'bg-blue-500/10 text-blue-600' :
+                              'bg-amber-500/10 text-amber-600'
+                            }`}>
+                            <Target className="w-4 h-4" />
+                            {path.match_score}% Match
                           </div>
                         </div>
-                        <button
-                          onClick={() => toggleSave(opp.id)}
-                          className="flex-shrink-0 p-2 rounded-lg hover:bg-primary/20 transition-colors"
-                        >
-                          <Star
-                            className={`w-5 h-5 transition-colors ${
-                              savedOpportunities.includes(opp.id) ? "fill-primary text-primary" : "text-muted-foreground"
-                            }`}
-                          />
-                        </button>
                       </div>
-                    </div>
 
-                    {/* Match Score */}
-                    <div className="lg:col-span-1 p-4 rounded-lg bg-primary/10 border border-primary/30 flex flex-col items-center justify-center">
-                      <p className="text-xs text-muted-foreground font-medium mb-1">SKILL MATCH</p>
-                      <p className="text-3xl font-bold text-primary">{opp.match}%</p>
-                    </div>
-
-                    {/* Salary & Status */}
-                    <div className="lg:col-span-1 space-y-2">
-                      <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/30">
-                        <div className="flex items-center gap-2 mb-1">
-                          <DollarSign className="w-4 h-4 text-emerald-600" />
-                          <p className="text-xs text-emerald-600 font-medium">SALARY</p>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4 p-4 rounded-xl bg-muted/30">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 rounded-lg bg-emerald-500/10">
+                            <DollarSign className="w-4 h-4 text-emerald-500" />
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground">Salary Range</p>
+                            <p className="text-sm font-semibold text-foreground">{path.salary_range}</p>
+                          </div>
                         </div>
-                        <p className="font-bold text-sm text-emerald-600">{opp.salary}</p>
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 rounded-lg bg-blue-500/10">
+                            <Clock className="w-4 h-4 text-blue-500" />
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground">Transition Time</p>
+                            <p className="text-sm font-semibold text-foreground">{path.estimated_transition_time}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 rounded-lg bg-primary/10">
+                            <TrendingUp className="w-4 h-4 text-primary" />
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground">Growth Outlook</p>
+                            <p className="text-sm font-semibold text-foreground">{path.growth_outlook}</p>
+                          </div>
+                        </div>
                       </div>
-                      <div className={`p-3 rounded-lg border ${urgencyConfig[opp.urgency as keyof typeof urgencyConfig].color}`}>
-                        <p className="text-xs font-bold">{opp.urgency}</p>
+
+                      {path.skill_gaps && path.skill_gaps.length > 0 && (
+                        <div>
+                          <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">
+                            <Layers className="w-3 h-3" /> Skills to Develop:
+                          </p>
+                          <div className="flex flex-wrap gap-2">
+                            {path.skill_gaps.map((skill, sIdx) => (
+                              <span
+                                key={sIdx}
+                                className="px-2.5 py-1 text-xs font-medium bg-background border border-border rounded-md text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors"
+                              >
+                                {skill}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Find Jobs CTA */}
+                      <div className="mt-6 flex justify-end">
+                        <Link href="/linkedin-jobs">
+                          <Button variant="outline" size="sm" className="gap-2">
+                            Find Jobs
+                            <ArrowRight className="w-4 h-4" />
+                          </Button>
+                        </Link>
                       </div>
-                    </div>
-                  </div>
-
-                  {/* Why This Role */}
-                  <div className="mb-4 p-4 rounded-lg bg-muted/20 border border-border/30">
-                    <p className="text-sm text-foreground">
-                      <span className="font-bold text-primary">Why matched:</span> {opp.why}
-                    </p>
-                  </div>
-
-                  {/* Benefits */}
-                  <div className="mb-4 space-y-2">
-                    <p className="text-xs font-bold text-muted-foreground uppercase">Benefits & Perks</p>
-                    <div className="flex flex-wrap gap-2">
-                      {opp.benefits.map((benefit) => (
-                        <Badge key={benefit} variant="secondary" className="text-xs">
-                          {benefit}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Tags */}
-                  <div className="mb-4 flex flex-wrap gap-2">
-                    {opp.tags.map((tag) => (
-                      <Badge key={tag} variant="outline" className="text-xs bg-primary/5 text-primary border-primary/30">
-                        {tag}
-                      </Badge>
-                    ))}
-                  </div>
-
-                  {/* CTA */}
-                  <Button className="w-full gap-2 group/btn">
-                    Explore Opportunity
-                    <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
-                  </Button>
-                </Card>
-              ))}
-            </section>
+                    </Card>
+                  ))}
+                </section>
+              </>
+            ) : (
+              <div className="flex items-center justify-center min-h-[30vh]">
+                <p className="text-muted-foreground text-sm">
+                  No personalized opportunities available yet. Complete your profile to unlock AI-powered recommendations.
+                </p>
+              </div>
+            )}
           </div>
         </main>
       </div>

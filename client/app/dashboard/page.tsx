@@ -62,9 +62,11 @@ import {
   Layers,
 } from "lucide-react"
 import { useEffect, useState, useCallback } from "react"
+import { useRouter } from "next/navigation"
 import { getDashboardData, getSkills, type DashboardData, type Skill } from "@/lib/api"
 
 export default function DashboardPage() {
+  const router = useRouter()
   const { user } = useAuth()
   const [mounted, setMounted] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -358,7 +360,7 @@ export default function DashboardPage() {
                   {/* Left Column (2/3 width) */}
                   <div className="lg:col-span-2 space-y-8">
 
-                    {/* Recommended Career Paths */}
+                    {/* Recommended Career Paths - Graph (cards moved to Opportunities page) */}
                     {careerDashboard?.recommended_career_paths && careerDashboard.recommended_career_paths.length > 0 && (
                       <section className="animate-in fade-in slide-in-from-bottom-4 duration-500 delay-200">
                         <div className="flex items-center justify-between mb-6">
@@ -390,7 +392,9 @@ export default function DashboardPage() {
                                       return (
                                         <div className="bg-popover border border-border p-3 rounded-lg shadow-xl">
                                           <p className="font-bold text-foreground">{data.fullName}</p>
-                                          <p className="text-sm text-muted-foreground">Match Score: <span className="font-bold text-primary">{data.matchScore}%</span></p>
+                                          <p className="text-sm text-muted-foreground">
+                                            Match Score: <span className="font-bold text-primary">{data.matchScore}%</span>
+                                          </p>
                                         </div>
                                       );
                                     }
@@ -407,87 +411,6 @@ export default function DashboardPage() {
                           </div>
                         </Card>
 
-                        {/* Career Cards */}
-                        <div className="grid grid-cols-1 gap-4">
-                          {careerDashboard.recommended_career_paths.map((path, idx) => (
-                            <Card
-                              key={idx}
-                              className="p-6 border-border/40 bg-card/50 backdrop-blur-sm hover:bg-card/80 transition-all duration-300 hover:shadow-lg group relative overflow-hidden"
-                            >
-                              <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-primary to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-
-                              <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-4">
-                                <div className="flex-1">
-                                  <div className="flex items-center gap-2 mb-2">
-                                    <h3 className="text-xl font-bold text-foreground group-hover:text-primary transition-colors">
-                                      {path.title}
-                                    </h3>
-                                    {idx === 0 && (
-                                      <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-primary/20 text-primary border border-primary/20">
-                                        Top Pick
-                                      </span>
-                                    )}
-                                  </div>
-                                  <p className="text-sm text-muted-foreground mb-4">{path.reasoning}</p>
-                                </div>
-                                <div className="flex flex-col items-end gap-2 min-w-[120px]">
-                                  <div className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm font-bold ${path.match_score >= 90 ? 'bg-emerald-500/10 text-emerald-600' :
-                                    path.match_score >= 80 ? 'bg-blue-500/10 text-blue-600' :
-                                      'bg-amber-500/10 text-amber-600'
-                                    }`}>
-                                    <Target className="w-4 h-4" />
-                                    {path.match_score}% Match
-                                  </div>
-                                </div>
-                              </div>
-
-                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4 p-4 rounded-xl bg-muted/30">
-                                <div className="flex items-center gap-3">
-                                  <div className="p-2 rounded-lg bg-emerald-500/10">
-                                    <DollarSign className="w-4 h-4 text-emerald-500" />
-                                  </div>
-                                  <div>
-                                    <p className="text-xs text-muted-foreground">Salary Range</p>
-                                    <p className="text-sm font-semibold text-foreground">{path.salary_range}</p>
-                                  </div>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                  <div className="p-2 rounded-lg bg-blue-500/10">
-                                    <Clock className="w-4 h-4 text-blue-500" />
-                                  </div>
-                                  <div>
-                                    <p className="text-xs text-muted-foreground">Transition Time</p>
-                                    <p className="text-sm font-semibold text-foreground">{path.estimated_transition_time}</p>
-                                  </div>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                  <div className="p-2 rounded-lg bg-primary/10">
-                                    <TrendingUp className="w-4 h-4 text-primary" />
-                                  </div>
-                                  <div>
-                                    <p className="text-xs text-muted-foreground">Growth Outlook</p>
-                                    <p className="text-sm font-semibold text-foreground">{path.growth_outlook}</p>
-                                  </div>
-                                </div>
-                              </div>
-
-                              {path.skill_gaps && path.skill_gaps.length > 0 && (
-                                <div>
-                                  <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">
-                                    <Layers className="w-3 h-3" /> Skills to Develop:
-                                  </p>
-                                  <div className="flex flex-wrap gap-2">
-                                    {path.skill_gaps.map((skill, sIdx) => (
-                                      <span key={sIdx} className="px-2.5 py-1 text-xs font-medium bg-background border border-border rounded-md text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors">
-                                        {skill}
-                                      </span>
-                                    ))}
-                                  </div>
-                                </div>
-                              )}
-                            </Card>
-                          ))}
-                        </div>
                       </section>
                     )}
 
@@ -644,34 +567,74 @@ export default function DashboardPage() {
                       </section>
                     )}
 
-                    {/* Action Items */}
-                    {careerDashboard?.action_items && careerDashboard.action_items.length > 0 && (
-                      <section className="animate-in fade-in slide-in-from-bottom-4 duration-500 delay-600">
-                        <div className="flex items-center gap-2 mb-6">
-                          <div className="p-2 rounded-lg bg-green-500/10">
-                            <Zap className="w-5 h-5 text-green-500" />
-                          </div>
-                          <h2 className="text-xl font-bold text-foreground">Next Steps</h2>
-                        </div>
-
-                        <Card className="p-5 border-border/40 bg-card/50 backdrop-blur-sm">
-                          <div className="space-y-4">
-                            {careerDashboard.action_items.slice(0, 4).map((action, idx) => (
-                              <div key={idx} className="flex gap-3">
-                                <div className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${idx === 0 ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'
-                                  }`}>
-                                  {idx + 1}
-                                </div>
-                                <p className="text-sm text-foreground">{action}</p>
-                              </div>
-                            ))}
-                          </div>
-                        </Card>
-                      </section>
-                    )}
-
                   </div>
                 </div>
+
+                {/* Your Next Steps CTAs - full-width section */}
+                <section className="mt-10 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-300">
+                  <h3 className="text-2xl font-bold mb-6 text-foreground">Your Next Steps</h3>
+                  <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+                    <Card
+                      className="p-6 border border-border/50 bg-card/60 hover:bg-card/80 transition-colors cursor-pointer flex items-start gap-5 rounded-2xl shadow-sm"
+                      onClick={() => router.push("/resume-builder")}
+                    >
+                      <div className="flex-shrink-0 w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
+                        <span className="text-primary font-bold text-xl">1</span>
+                      </div>
+                      <div>
+                        <p className="text-lg font-semibold text-foreground">Build Your Targeted Resume</p>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Create a personalized resume for your designated job role
+                        </p>
+                      </div>
+                    </Card>
+
+                    <Card
+                      className="p-6 border border-border/50 bg-card/60 hover:bg-card/80 transition-colors cursor-pointer flex items-start gap-5 rounded-2xl shadow-sm"
+                      onClick={() => router.push("/portfolio")}
+                    >
+                      <div className="flex-shrink-0 w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
+                        <span className="text-primary font-bold text-xl">2</span>
+                      </div>
+                      <div>
+                        <p className="text-lg font-semibold text-foreground">Build Your Portfolio</p>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Create 2-3 projects showcasing your best work
+                        </p>
+                      </div>
+                    </Card>
+
+                    <Card
+                      className="p-6 border border-border/50 bg-card/60 hover:bg-card/80 transition-colors cursor-pointer flex items-start gap-5 rounded-2xl shadow-sm"
+                      onClick={() => router.push("/interview")}
+                    >
+                      <div className="flex-shrink-0 w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
+                        <span className="text-primary font-bold text-xl">3</span>
+                      </div>
+                      <div>
+                        <p className="text-lg font-semibold text-foreground">Practice Interviews</p>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Practice mock interviews before real ones
+                        </p>
+                      </div>
+                    </Card>
+
+                    <Card
+                      className="p-6 border border-border/50 bg-card/60 hover:bg-card/80 transition-colors cursor-pointer flex items-start gap-5 rounded-2xl shadow-sm"
+                      onClick={() => router.push("/opportunities")}
+                    >
+                      <div className="flex-shrink-0 w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
+                        <span className="text-primary font-bold text-xl">4</span>
+                      </div>
+                      <div>
+                        <p className="text-lg font-semibold text-foreground">View Opportunities</p>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Maximize your opportunities of getting the perfect job
+                        </p>
+                      </div>
+                    </Card>
+                  </div>
+                </section>
 
                 {/* Data Sources Footer */}
                 {careerDashboard?.data_sources && (
