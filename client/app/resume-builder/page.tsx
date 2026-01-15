@@ -407,7 +407,7 @@ export default function ResumeBuilderPage() {
             <div className="py-4">
               <Textarea
                 placeholder="Paste the full job description here..."
-                className="min-h-[200px] resize-none"
+                className="min-h-[200px] resize-none bg-background text-foreground caret-primary"
                 value={jobDescription}
                 onChange={(e) => setJobDescription(e.target.value)}
               />
