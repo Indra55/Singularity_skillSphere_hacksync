@@ -138,7 +138,7 @@ export default function ProfilePage() {
   useEffect(() => {
     async function fetchApplications() {
       try {
-        const res = await fetch("/api/jobs/applications")
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/jobs/applications`)
         if (res.ok) {
           const data = await res.json()
           setApplications(data.applications || [])

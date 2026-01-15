@@ -50,7 +50,7 @@ export default function LinkedInJobsPage() {
                 setLoading(true)
                 console.log("Frontend: Fetching jobs from /api/jobs/linkedin")
 
-                const res = await fetch("/api/jobs/linkedin", {
+                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/jobs/linkedin`, {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
@@ -104,7 +104,7 @@ export default function LinkedInJobsPage() {
 
         setSavingApplication(true)
         try {
-            const res = await fetch("/api/jobs/applications", {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/jobs/applications`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

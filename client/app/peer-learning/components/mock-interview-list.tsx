@@ -22,28 +22,28 @@ export function MockInterviewList() {
   const fetchRooms = async () => {
     try {
       setLoading(true)
-      
-      const res = await fetch("http://localhost:5000/api/rooms").catch(() => null)
+
+      const res = await fetch(`${process.env.NEXT_PUBLIC_ML_API_URL || 'http://localhost:5000'}/api/rooms`).catch(() => null)
 
       if (!res || !res.ok) {
         // Fallback for demonstration if service is offline
         setRooms([
-          { 
-              roomId: "demo-1", 
-              link: "#", 
-              hostCandidateName: "Demo Host", 
-              participantCount: 1, 
-              status: "lobby" 
+          {
+            roomId: "demo-1",
+            link: "#",
+            hostCandidateName: "Demo Host",
+            participantCount: 1,
+            status: "lobby"
           }
         ])
-        setError(null) 
+        setError(null)
         return
       }
 
       const data = await res.json()
       setRooms(Array.isArray(data) ? data : [])
       setError(null)
-      
+
     } catch (err) {
       console.log("Safe fallback triggered")
       setRooms([])
@@ -63,13 +63,13 @@ export function MockInterviewList() {
     <Card className="flex flex-col h-full border-border/40 bg-card/50 backdrop-blur-sm p-4 overflow-hidden">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-            <div className="p-2 rounded-md bg-emerald-500/10">
-                <Video className="w-5 h-5 text-emerald-500" />
-            </div>
-            <h3 className="font-semibold text-lg">Mock Interviews</h3>
+          <div className="p-2 rounded-md bg-emerald-500/10">
+            <Video className="w-5 h-5 text-emerald-500" />
+          </div>
+          <h3 className="font-semibold text-lg">Mock Interviews</h3>
         </div>
         <Button variant="ghost" size="icon" onClick={fetchRooms} disabled={loading}>
-            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+          {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
         </Button>
       </div>
 
@@ -82,7 +82,7 @@ export function MockInterviewList() {
         ) : rooms.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-40 text-muted-foreground text-center p-4">
             <p className="text-sm">No active rooms found.</p>
-            <Button variant="link" className="text-emerald-500" onClick={() => window.open("http://localhost:5000/", "_blank")}>Start a room?</Button>
+            <Button variant="link" className="text-emerald-500" onClick={() => window.open(process.env.NEXT_PUBLIC_ML_API_URL || "http://localhost:5000", "_blank")}>Start a room?</Button>
           </div>
         ) : (
           rooms.map((room) => (
@@ -99,7 +99,7 @@ export function MockInterviewList() {
               </div>
               <div className="flex items-center justify-between text-xs text-muted-foreground">
                 <span className="flex items-center gap-1">
-                    <User className="w-3 h-3" /> {room.hostCandidateName}
+                  <User className="w-3 h-3" /> {room.hostCandidateName}
                 </span>
                 <span className="text-emerald-500 font-medium group-hover:underline">Join ({room.participantCount}) →</span>
               </div>
@@ -109,7 +109,7 @@ export function MockInterviewList() {
       </div>
 
       <div className="mt-4 pt-4 border-t border-border/40">
-        <Button className="w-full bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => window.open("http://localhost:5000/", "_blank")}>
+        <Button className="w-full bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => window.open(process.env.NEXT_PUBLIC_ML_API_URL || "http://localhost:5000", "_blank")}>
           Create New Room
         </Button>
       </div>
