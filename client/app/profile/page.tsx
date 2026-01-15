@@ -49,13 +49,14 @@ import {
   Clock,
   Building2,
   RefreshCw,
-  Loader2,
   Save,
   X,
 } from "lucide-react"
 import { useState, useEffect, useRef } from "react"
 import "@/app/dashboard/dashboard.css"
 import { getResumeInfo, uploadResume, ResumeInfo, updateProfile, getProfileData } from "@/lib/api"
+import { toaster } from "@/lib/toaster"
+import { Spinner } from "@/components/ui/spinner"
 
 interface JobApplication {
   id: string
@@ -170,8 +171,18 @@ export default function ProfilePage() {
       const response = await uploadResume(file)
       if (response.error) {
         setError(response.error)
+        toaster.create({
+          title: "Upload Failed",
+          description: response.error,
+          type: "error"
+        })
       } else {
         setUploadSuccess(true)
+        toaster.create({
+          title: "Upload Successful",
+          description: "Resume uploaded successfully!",
+          type: "success"
+        })
         // Refresh resume info after successful upload
         const infoResponse = await getResumeInfo()
         if (infoResponse.data) {
@@ -183,6 +194,11 @@ export default function ProfilePage() {
     } catch (err) {
       console.error("Upload failed:", err)
       setError("Failed to upload resume. Please try again.")
+      toaster.create({
+        title: "Upload Error",
+        description: "Failed to upload resume. Please try again.",
+        type: "error"
+      })
     } finally {
       setUploading(false)
       // Reset file input
@@ -258,8 +274,18 @@ export default function ProfilePage() {
 
       if (response.error) {
         setError(response.error)
+        toaster.create({
+          title: "Save Failed",
+          description: response.error,
+          type: "error"
+        })
       } else {
         setSaveSuccess(true)
+        toaster.create({
+          title: "Profile Updated",
+          description: "Your changes have been saved successfully.",
+          type: "success"
+        })
         // Refresh user data in auth context
         if (refreshUser) {
           await refreshUser()
@@ -273,6 +299,11 @@ export default function ProfilePage() {
     } catch (err) {
       console.error("Failed to save profile:", err)
       setError("Failed to save profile. Please try again.")
+      toaster.create({
+        title: "Save Error",
+        description: "Failed to save profile. Please try again.",
+        type: "error"
+      })
     } finally {
       setSaving(false)
     }
@@ -325,16 +356,16 @@ export default function ProfilePage() {
 
         {/* Hero Section with Glassmorphism */}
         <div className="relative pt-32 pb-12 overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-background z-0" />
-          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
+          <div className="absolute inset-0 bg-linear-to-b from-primary/20 to-transparent z-0" />
+          <div className="absolute top-0 left-0 right-0 h-px bg-linear-to-r from-transparent via-primary/20 to-transparent" />
 
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
             <div className="flex flex-col md:flex-row items-start md:items-center gap-8">
               <div className="relative group">
-                <div className="absolute -inset-1 bg-gradient-to-r from-primary to-purple-600 rounded-full opacity-75 blur transition duration-1000 group-hover:opacity-100 group-hover:duration-200"></div>
+                <div className="absolute -inset-1 bg-linear-to-r from-primary to-accent rounded-full opacity-75 blur transition duration-1000 group-hover:opacity-100 group-hover:duration-200"></div>
                 <Avatar className="w-32 h-32 border-4 border-background relative">
                   <AvatarImage src={user?.avatar} />
-                  <AvatarFallback className="bg-gradient-to-br from-gray-800 to-gray-900 text-white text-4xl font-bold">
+                  <AvatarFallback className="bg-linear-to-br from-gray-800 to-gray-900 text-white text-4xl font-bold">
                     {initials}
                   </AvatarFallback>
                 </Avatar>
@@ -343,7 +374,7 @@ export default function ProfilePage() {
               <div className="flex-1 space-y-2">
                 <div className="flex flex-col md:flex-row md:items-center gap-4 justify-between">
                   <div>
-                    <h1 className="text-4xl md:text-5xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">
+                    <h1 className="text-4xl md:text-5xl font-bold tracking-tight bg-clip-text text-transparent bg-linear-to-r from-white to-gray-400">
                       {resumeInfo?.extracted_name || user?.name || "Welcome, User"}
                     </h1>
                     <p className="text-xl text-muted-foreground flex items-center gap-2 mt-2">
@@ -372,7 +403,7 @@ export default function ProfilePage() {
                     >
                       {uploading ? (
                         <>
-                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <Spinner className="w-4 h-4" />
                           Uploading...
                         </>
                       ) : resumeInfo ? (
@@ -463,21 +494,7 @@ export default function ProfilePage() {
             {/* Profile Tab Content */}
             <TabsContent value="profile">
               {/* Upload Success/Error Notifications */}
-              {uploadSuccess && (
-                <div className="mb-6 p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl flex items-center gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-emerald-500" />
-                  <span className="text-emerald-500 font-medium">Resume uploaded successfully! Your profile has been updated with AI insights.</span>
-                </div>
-              )}
-              {error && (
-                <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-2xl flex items-center gap-3">
-                  <AlertCircle className="w-5 h-5 text-red-500" />
-                  <span className="text-red-500 font-medium">{error}</span>
-                  <Button variant="ghost" size="sm" onClick={() => setError(null)} className="ml-auto text-red-500 hover:text-red-400">
-                    Dismiss
-                  </Button>
-                </div>
-              )}
+
 
               {!resumeInfo ? (
                 <div className="text-center py-20 bg-card/30 rounded-3xl border border-border/50 backdrop-blur-sm">
@@ -496,7 +513,7 @@ export default function ProfilePage() {
                   >
                     {uploading ? (
                       <>
-                        <Loader2 className="w-5 h-5 animate-spin" />
+                        <Spinner className="w-5 h-5" />
                         Uploading...
                       </>
                     ) : (
@@ -601,7 +618,7 @@ export default function ProfilePage() {
                     {/* Summary */}
                     {resumeInfo.professional_summary && (
                       <Card className="p-8 border-border/50 bg-card/40 backdrop-blur-md shadow-xl relative overflow-hidden">
-                        <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-primary to-purple-600"></div>
+                        <div className="absolute top-0 left-0 w-1 h-full bg-linear-to-b from-primary to-accent"></div>
                         <h3 className="text-xl font-semibold mb-4">Professional Summary</h3>
                         <p className="text-muted-foreground leading-relaxed text-lg">
                           {resumeInfo.professional_summary}
@@ -653,7 +670,7 @@ export default function ProfilePage() {
                                 </a>
                               )}
                             </div>
-                            <p className="text-muted-foreground text-sm mb-4 flex-grow line-clamp-3">
+                            <p className="text-muted-foreground text-sm mb-4 grow line-clamp-3">
                               {project.description}
                             </p>
                             <div className="flex flex-wrap gap-2 mt-auto">
@@ -744,7 +761,7 @@ export default function ProfilePage() {
                     {applications.map((app) => (
                       <Card key={app.id} className="p-6 border-border/50 bg-card/40 backdrop-blur-md hover:bg-card/60 transition-all duration-300">
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                          <div className="flex-1">
+                          <div className="grow">
                             <div className="flex items-center gap-3 mb-2">
                               <h3 className="text-lg font-semibold">{app.job_title}</h3>
                               <Badge className={getStatusColor(app.status)}>
@@ -998,7 +1015,7 @@ export default function ProfilePage() {
               >
                 {saving ? (
                   <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <Spinner className="w-4 h-4" />
                     Saving...
                   </>
                 ) : (

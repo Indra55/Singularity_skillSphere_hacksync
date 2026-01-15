@@ -9,6 +9,7 @@ import { useAuth } from "@/lib/auth-context"
 import { useRouter } from "next/navigation"
 import "@/app/dashboard/dashboard.css"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { motion, AnimatePresence } from "motion/react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,7 +24,6 @@ const mainNavItems = [
   { label: "Dashboard", href: "/dashboard", icon: TrendingUp },
   { label: "AI Planned Learning", href: "/ai-planner", icon: Brain },
   { label: "Resume Builder", href: "/resume-builder", icon: FileText },
-  { label: "Peer Learning", href: "/peer-learning", icon: Users },
   { label: "Portfolio", href: "/portfolio", icon: Briefcase },
   { label: "Interview", href: "/interview", icon: Mic },
 ]
@@ -33,7 +33,9 @@ const moreNavItems = [
   { label: "Opportunities", href: "/opportunities", icon: Users },
   { label: "Trends", href: "/job-trends", icon: TrendIcon },
   { label: "Jobs", href: "/linkedin-jobs", icon: Bell },
-  { label: "Code", href: "/coding-practice", icon: Code },
+  // { label: "Code", href: "/coding-practice", icon: Code },
+  { label: "Peer Learning", href: "/peer-learning", icon: Users },
+
 ]
 
 export function DynamicNavbar() {
@@ -156,7 +158,7 @@ export function DynamicNavbar() {
           <div
             onMouseLeave={handleNavLeave}
             onMouseEnter={handleNavEnter}
-            className={`hidden xl:flex items-center relative overflow-hidden border rounded-full backdrop-blur-md transition-all duration-500 shadow-lg ${
+            className={`hidden xl:flex items-center relative overflow-hidden border rounded-full backdrop-blur-md transition-all duration-500 shadow-lg w-[1100px] ${
               isCompressed ? "px-2 py-1.5" : "px-4 py-2"
             } ${
               !isMoreHovered 
@@ -172,14 +174,14 @@ export function DynamicNavbar() {
             />
 
             {/* Main Navigation Items (Visible when NOT hovered) */}
-            <div className={`flex items-center gap-1 transition-all duration-300 ${isMoreHovered ? "opacity-0 translate-x-4 pointer-events-none absolute" : "opacity-100 translate-x-0 relative"}`}>
+            <div className={`flex items-center flex-1 transition-all duration-300 ${isMoreHovered ? "opacity-0 translate-x-4 pointer-events-none absolute inset-y-0 left-0 w-full" : "opacity-100 translate-x-0 relative w-full"}`}>
                 {mainNavItems.map((item) => {
                 const Icon = item.icon
                 const isActive = pathname === item.href
                 return (
-                    <Link key={item.href} href={item.href}>
+                    <Link key={item.href} href={item.href} className="flex-1 px-1">
                     <div
-                        className={`flex items-center gap-2 rounded-full font-medium transition-all duration-300 ${
+                        className={`flex items-center justify-center gap-2 rounded-full font-medium transition-all duration-300 ${
                         isCompressed ? "text-xs px-2 py-1" : "text-sm px-3 py-1.5"
                         } ${
                         isActive
@@ -200,14 +202,14 @@ export function DynamicNavbar() {
             </div>
 
             {/* More Navigation Items (Visible when hovered) */}
-             <div className={`flex items-center gap-1 transition-all duration-300 ${!isMoreHovered ? "opacity-0 -translate-x-4 pointer-events-none absolute" : "opacity-100 translate-x-0 relative"}`}>
+             <div className={`flex items-center flex-1 transition-all duration-300 ${!isMoreHovered ? "opacity-0 -translate-x-4 pointer-events-none absolute inset-y-0 left-0 w-full" : "opacity-100 translate-x-0 relative w-full"}`}>
                 {moreNavItems.map((item) => {
                   const Icon = item.icon
                   const isActive = pathname === item.href
                   return (
-                    <Link key={item.href} href={item.href}>
+                    <Link key={item.href} href={item.href} className="flex-1 px-1">
                       <div
-                        className={`flex items-center gap-2 rounded-full font-medium transition-all duration-300 z-10 relative ${
+                        className={`flex items-center justify-center gap-2 rounded-full font-medium transition-all duration-300 z-10 relative w-full ${
                           isCompressed ? "text-xs px-2 py-1" : "text-sm px-3 py-1.5"
                         } ${
                            isActive
@@ -226,7 +228,7 @@ export function DynamicNavbar() {
             </div>
             
             {/* Divider */}
-            <div className={`h-4 w-px mx-1 transition-colors duration-300 z-10 relative ${isMoreHovered ? "bg-white/30" : "bg-foreground/20"}`} />
+            <div className={`h-4 w-px mx-4 transition-colors duration-300 z-10 relative ${isMoreHovered ? "bg-white/30" : "bg-foreground/20"}`} />
 
             {/* More Trigger Button */}
             <div 
@@ -347,56 +349,87 @@ export function DynamicNavbar() {
           </div>
         </div>
 
-        {/* Mobile navigation menu */}
-        {isMobileMenuOpen && (
-          <div className="md:hidden mt-4 pb-4 space-y-2 animate-in fade-in slide-in-from-top-2">
-            {mainNavItems.map((item) => {
-              const Icon = item.icon
-              const isActive = pathname === item.href
-              return (
-                <Link key={item.href} href={item.href} onClick={() => setIsMobileMenuOpen(false)}>
-                  <Button
-                    variant={isActive ? "default" : "ghost"}
-                    className={`w-full justify-start gap-2 rounded-lg ${
-                      isActive
-                        ? "bg-primary text-primary-foreground"
-                        : isDashboardRoute
-                          ? "text-foreground/80 hover:text-foreground hover:bg-foreground/10"
-                          : "text-muted-foreground"
-                    }`}
-                  >
-                    <Icon className="w-4 h-4" />
-                    <span>{item.label}</span>
-                  </Button>
-                </Link>
-              )
-            })}
-            <div className="pt-2 border-t border-border/20 mt-2">
-              <p className="text-xs text-muted-foreground px-3 mb-2 font-semibold">More Features</p>
-              {moreNavItems.map((item) => {
-                const Icon = item.icon
-                const isActive = pathname === item.href
-                return (
-                  <Link key={item.href} href={item.href} onClick={() => setIsMobileMenuOpen(false)}>
-                    <Button
-                      variant={isActive ? "default" : "ghost"}
-                      className={`w-full justify-start gap-2 rounded-lg ${
-                        isActive
-                          ? "bg-primary text-primary-foreground"
-                          : isDashboardRoute
-                            ? "text-foreground/80 hover:text-foreground hover:bg-foreground/10"
-                            : "text-muted-foreground"
-                      }`}
-                    >
-                      <Icon className="w-4 h-4" />
-                      <span>{item.label}</span>
+        {/* Mobile navigation menu - Premium Overlay */}
+        <AnimatePresence>
+          {isMobileMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.3, ease: "easeInOut" }}
+              className="md:hidden overflow-hidden"
+            >
+              <div className="mt-4 pb-6 space-y-2 border-t border-border/10 pt-4">
+                <div className="grid grid-cols-1 gap-2">
+                  {mainNavItems.map((item) => {
+                    const Icon = item.icon
+                    const isActive = pathname === item.href
+                    return (
+                      <Link key={item.href} href={item.href} onClick={() => setIsMobileMenuOpen(false)}>
+                        <motion.div
+                          whileTap={{ scale: 0.98 }}
+                          className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all ${
+                            isActive
+                              ? "bg-linear-to-r from-primary to-accent text-white shadow-lg"
+                              : "text-foreground/80 hover:bg-foreground/5"
+                          }`}
+                        >
+                          <Icon className="w-5 h-5 shrink-0" />
+                          <span>{item.label}</span>
+                        </motion.div>
+                      </Link>
+                    )
+                  })}
+                </div>
+
+                <div className="mt-6">
+                  <p className="text-[10px] uppercase tracking-widest text-muted-foreground px-4 mb-3 font-bold opacity-50">More Services</p>
+                  <div className="grid grid-cols-2 gap-2 px-2">
+                    {moreNavItems.map((item) => {
+                      const Icon = item.icon
+                      const isActive = pathname === item.href
+                      return (
+                        <Link key={item.href} href={item.href} onClick={() => setIsMobileMenuOpen(false)}>
+                          <motion.div
+                            whileTap={{ scale: 0.95 }}
+                            className={`flex flex-col items-center justify-center gap-2 p-4 rounded-2xl border transition-all ${
+                              isActive
+                                ? "bg-primary/10 border-primary text-primary"
+                                : "bg-muted/30 border-border/20 text-muted-foreground hover:border-primary/30 hover:text-foreground"
+                            }`}
+                          >
+                            <Icon className="w-5 h-5" />
+                            <span className="text-xs font-medium">{item.label}</span>
+                          </motion.div>
+                        </Link>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                {user && (
+                  <div className="mt-6 flex items-center justify-between px-4 py-4 bg-muted/20 rounded-2xl border border-border/20">
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-10 w-10 border border-primary/20">
+                        <AvatarImage src={user?.avatar || "/placeholder-user.jpg"} />
+                        <AvatarFallback className="bg-primary/10 text-primary">
+                          {user?.name?.split(" ").map((n) => n[0]).join("").toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex flex-col">
+                        <span className="text-sm font-bold text-foreground leading-none">{user.name}</span>
+                        <span className="text-xs text-muted-foreground">{user.email}</span>
+                      </div>
+                    </div>
+                    <Button variant="ghost" size="icon" onClick={handleLogout} className="text-red-500 hover:bg-red-500/10">
+                      <LogOut className="w-5 h-5" />
                     </Button>
-                  </Link>
-                )
-              })}
-            </div>
-          </div>
-        )}
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </nav>
   )

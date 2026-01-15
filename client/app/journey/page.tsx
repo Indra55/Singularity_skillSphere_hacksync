@@ -4,7 +4,8 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { MagneticButton } from "@/components/magnetic-button"
-import { Upload, FileText, User, Phone, MapPin, Briefcase, GraduationCap, Calendar, Loader2 } from "lucide-react"
+import { Upload, FileText, User, Phone, MapPin, Briefcase, GraduationCap, Calendar } from "lucide-react"
+import { Spinner } from "@/components/ui/spinner"
 import { useAuth } from "@/lib/auth-context"
 import { submitBasicInfo, submitCareerGoals, submitSkills, uploadResume } from "@/lib/api"
 
@@ -307,7 +308,7 @@ export default function JourneyOnboarding() {
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-accent" />
+        <Spinner className="size-8" />
       </div>
     )
   }
@@ -380,7 +381,7 @@ export default function JourneyOnboarding() {
 
                 <div className="space-y-6">
                   <div>
-                    <label className="text-sm font-medium text-foreground/80 mb-2 block flex items-center gap-2">
+                    <label className="text-sm font-medium text-foreground/80 mb-2 flex items-center gap-2">
                       <User className="w-4 h-4" />
                       Name
                     </label>
@@ -395,7 +396,7 @@ export default function JourneyOnboarding() {
                   </div>
 
                   <div>
-                    <label className="text-sm font-medium text-foreground/80 mb-2 block flex items-center gap-2">
+                    <label className="text-sm font-medium text-foreground/80 mb-2 flex items-center gap-2">
                       <Calendar className="w-4 h-4" />
                       Age
                     </label>
@@ -412,7 +413,7 @@ export default function JourneyOnboarding() {
                   </div>
 
                   <div>
-                    <label className="text-sm font-medium text-foreground/80 mb-2 block flex items-center gap-2">
+                    <label className="text-sm font-medium text-foreground/80 mb-2 flex items-center gap-2">
                       <Phone className="w-4 h-4" />
                       Phone
                     </label>
@@ -446,7 +447,7 @@ export default function JourneyOnboarding() {
                   </div>
 
                   <div>
-                    <label className="text-sm font-medium text-foreground/80 mb-2 block flex items-center gap-2">
+                    <label className="text-sm font-medium text-foreground/80 mb-2 flex items-center gap-2">
                       <MapPin className="w-4 h-4" />
                       Location
                     </label>
@@ -464,7 +465,7 @@ export default function JourneyOnboarding() {
                     <MagneticButton size="lg" variant="primary" onClick={handleNext} disabled={!canProceed() || isSaving}>
                       {isSaving ? (
                         <span className="flex items-center gap-2">
-                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <Spinner className="w-4 h-4" />
                           Saving...
                         </span>
                       ) : (
@@ -587,7 +588,7 @@ export default function JourneyOnboarding() {
                     <MagneticButton size="lg" variant="primary" onClick={handleStatusAndExperience} disabled={!canProceed() || isSaving}>
                       {isSaving ? (
                         <span className="flex items-center gap-2">
-                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <Spinner className="w-4 h-4" />
                           Saving...
                         </span>
                       ) : (
@@ -638,7 +639,7 @@ export default function JourneyOnboarding() {
                     >
                       {isUploadingResume ? (
                         <>
-                          <Loader2 className="w-5 h-5 animate-spin" />
+                          <Spinner className="w-5 h-5" />
                           <span>Uploading...</span>
                         </>
                       ) : (
@@ -733,7 +734,7 @@ export default function JourneyOnboarding() {
                     >
                       {isSaving ? (
                         <span className="flex items-center gap-2">
-                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <Spinner className="w-4 h-4" />
                           Completing...
                         </span>
                       ) : formData.resumeAutoFill ? (

@@ -62,9 +62,11 @@ import {
   Layers,
   ArrowRight,
 } from "lucide-react"
+import { Spinner } from "@/components/ui/spinner"
 import { useEffect, useState, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { getDashboardData, getSkills, type DashboardData, type Skill } from "@/lib/api"
+import { toaster } from "@/lib/toaster"
 
 export default function DashboardPage() {
   const router = useRouter()
@@ -92,6 +94,11 @@ export default function DashboardPage() {
       } else if (dashboardResult.error) {
         console.error("Dashboard API error:", dashboardResult.error)
         setError(dashboardResult.error)
+        toaster.create({
+          title: "Dashboard Error",
+          description: dashboardResult.error,
+          type: "error"
+        });
       }
 
       if (skillsResult.data?.skills) {
@@ -101,6 +108,11 @@ export default function DashboardPage() {
     } catch (err) {
       console.error("Failed to fetch dashboard data:", err)
       setError("Failed to load dashboard data. Please try again.")
+      toaster.create({
+        title: "Load Error",
+        description: "Failed to load dashboard data.",
+        type: "error"
+      });
     } finally {
       setLoading(false)
     }
@@ -210,7 +222,7 @@ export default function DashboardPage() {
             {loading ? (
               <div className="flex items-center justify-center min-h-[60vh]">
                 <div className="flex flex-col items-center gap-4">
-                  <Loader2 className="w-12 h-12 animate-spin text-primary" />
+                  <Spinner className="size-16" />
                   <p className="text-muted-foreground">Loading your career insights...</p>
                 </div>
               </div>
@@ -223,7 +235,7 @@ export default function DashboardPage() {
                     {/* Left Column: Stats Cards */}
                     <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
                       {/* Profile Strength */}
-                      <Card className="p-6 border-border/40 bg-gradient-to-br from-primary/5 to-primary/10 backdrop-blur-sm relative overflow-hidden group">
+                      <Card className="p-6 border-border/40 bg-card/50 backdrop-blur-sm relative overflow-hidden group">
                         <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                           <Award className="w-24 h-24 text-primary" />
                         </div>
@@ -253,7 +265,7 @@ export default function DashboardPage() {
                       </Card>
 
                       {/* Resume Score */}
-                      <Card className="p-6 border-border/40 bg-gradient-to-br from-emerald-500/5 to-emerald-500/10 backdrop-blur-sm relative overflow-hidden group">
+                      <Card className="p-6 border-border/40 bg-linear-to-br from-emerald-500/5 to-emerald-500/10 backdrop-blur-sm relative overflow-hidden group">
                         <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                           <CheckCircle2 className="w-24 h-24 text-emerald-500" />
                         </div>
@@ -426,7 +438,7 @@ export default function DashboardPage() {
                         </div>
 
                         <Card className="p-8 border-border/40 bg-card/50 backdrop-blur-sm relative overflow-hidden">
-                          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 opacity-50" />
+                          <div className="absolute top-0 left-0 w-full h-1 bg-linear-to-r from-indigo-500 via-purple-500 to-pink-500 opacity-50" />
 
                           <div className="relative">
                             {/* Vertical Line */}
@@ -577,7 +589,7 @@ export default function DashboardPage() {
                   <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
                     <Card className="p-6 border border-border/50 bg-card/60 transition-colors flex flex-col gap-4 rounded-2xl shadow-sm">
                       <div className="flex items-start gap-5">
-                        <div className="flex-shrink-0 w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
+                        <div className="shrink-0 w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
                           <span className="text-primary font-bold text-xl">1</span>
                         </div>
                         <div>
@@ -594,7 +606,7 @@ export default function DashboardPage() {
 
                     <Card className="p-6 border border-border/50 bg-card/60 transition-colors flex flex-col gap-4 rounded-2xl shadow-sm">
                       <div className="flex items-start gap-5">
-                        <div className="flex-shrink-0 w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
+                        <div className="shrink-0 w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
                           <span className="text-primary font-bold text-xl">2</span>
                         </div>
                         <div>
@@ -611,7 +623,7 @@ export default function DashboardPage() {
 
                     <Card className="p-6 border border-border/50 bg-card/60 transition-colors flex flex-col gap-4 rounded-2xl shadow-sm">
                       <div className="flex items-start gap-5">
-                        <div className="flex-shrink-0 w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
+                        <div className="shrink-0 w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
                           <span className="text-primary font-bold text-xl">3</span>
                         </div>
                         <div>
@@ -621,14 +633,16 @@ export default function DashboardPage() {
                           </p>
                         </div>
                       </div>
-                      <Button className="w-full mt-auto gap-2" variant="outline" onClick={() => router.push("/interview")}>
+                      <Button className="w-full mt-auto gap-2" variant="outline"
+                        onClick={() => window.location.href = "https://hacksync-interview.vercel.app/"}
+                      >
                         Start Practice <ArrowRight className="w-4 h-4" />
                       </Button>
                     </Card>
 
                     <Card className="p-6 border border-border/50 bg-card/60 transition-colors flex flex-col gap-4 rounded-2xl shadow-sm">
                       <div className="flex items-start gap-5">
-                        <div className="flex-shrink-0 w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
+                        <div className="shrink-0 w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
                           <span className="text-primary font-bold text-xl">4</span>
                         </div>
                         <div>

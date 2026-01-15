@@ -24,14 +24,15 @@
    Clock,
    Layers,
    AlertCircle,
-   Loader2,
    ArrowRight,
  } from "lucide-react"
+import { Spinner } from "@/components/ui/spinner"
  import "@/app/dashboard/dashboard.css"
  import {
    getDashboardData,
    type DashboardData,
  } from "@/lib/api"
+import { toaster } from "@/lib/toaster"
  import { useCallback, useEffect, useState } from "react"
  
  export default function OpportunitiesPage() {
@@ -46,16 +47,26 @@
     try {
       const dashboardResult = await getDashboardData()
 
-      if (dashboardResult.data) {
-        setDashboardData(dashboardResult.data)
-      } else if (dashboardResult.error) {
-        console.error("Dashboard API error (opportunities):", dashboardResult.error)
-        setError(dashboardResult.error)
-      }
-    } catch (err) {
-      console.error("Failed to fetch dashboard data (opportunities):", err)
-      setError("Failed to load opportunities. Please try again.")
-    } finally {
+        if (dashboardResult.data) {
+          setDashboardData(dashboardResult.data)
+        } else if (dashboardResult.error) {
+          console.error("Dashboard API error (opportunities):", dashboardResult.error)
+          setError(dashboardResult.error)
+          toaster.create({
+            title: "Opportunities Error",
+            description: dashboardResult.error,
+            type: "error"
+          })
+        }
+      } catch (err) {
+        console.error("Failed to fetch dashboard data (opportunities):", err)
+        setError("Failed to load opportunities. Please try again.")
+        toaster.create({
+          title: "Load Error",
+          description: "Failed to load opportunities.",
+          type: "error"
+        })
+      } finally {
       setLoading(false)
     }
   }, [])
@@ -91,17 +102,12 @@
               </div>
             </section>
 
-            {error && (
-              <div className="mb-6 p-4 rounded-lg bg-destructive/10 border border-destructive/30 text-destructive flex items-center gap-2">
-                <AlertCircle className="w-5 h-5" />
-                <span>{error}</span>
-              </div>
-            )}
+
 
             {loading ? (
               <div className="flex items-center justify-center min-h-[50vh]">
                 <div className="flex flex-col items-center gap-4">
-                  <Loader2 className="w-10 h-10 animate-spin text-primary" />
+                  <Spinner className="size-16" />
                   <p className="text-muted-foreground">Loading personalized opportunities...</p>
                 </div>
               </div>
@@ -158,7 +164,7 @@
                       key={idx}
                       className="p-6 border-border/40 bg-card/50 backdrop-blur-sm hover:bg-card/80 transition-all duration-300 hover:shadow-lg group relative overflow-hidden"
                     >
-                      <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-primary to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <div className="absolute top-0 left-0 w-1 h-full bg-linear-to-b from-primary to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
 
                       <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-4">
                         <div className="flex-1">

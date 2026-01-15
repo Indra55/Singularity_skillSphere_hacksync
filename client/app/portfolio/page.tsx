@@ -4,7 +4,9 @@ import Link from "next/link"
 import { useEffect, useRef, useState } from "react"
 import { getResumeInfo, ResumeInfo } from "@/lib/api"
 import { ProtectedRoute } from "@/components/protected-route"
-import { Download, Loader2, AlertCircle } from "lucide-react"
+import { Download, AlertCircle } from "lucide-react"
+import { Spinner } from "@/components/ui/spinner"
+import { toaster } from "@/lib/toaster"
 
 // ============================================================================
 // TYPES
@@ -367,6 +369,11 @@ export default function PortfolioPage() {
 
         if (response.error) {
           setError(response.error)
+          toaster.create({
+            title: "Portfolio Error",
+            description: response.error,
+            type: "error"
+          })
           return
         }
 
@@ -375,10 +382,20 @@ export default function PortfolioPage() {
           setConfig(portfolioConfig)
         } else {
           setError("No resume data received")
+          toaster.create({
+            title: "No Data",
+            description: "No resume data received",
+            type: "warning"
+          })
         }
       } catch (err) {
         console.error("Error fetching portfolio:", err)
         setError("Failed to load portfolio data")
+        toaster.create({
+          title: "Load Error",
+          description: "Failed to load portfolio data",
+          type: "error"
+        })
       } finally {
         setLoading(false)
       }
@@ -443,7 +460,7 @@ export default function PortfolioPage() {
       <ProtectedRoute>
         <div className="min-h-screen flex items-center justify-center bg-background text-foreground">
           <div className="flex flex-col items-center gap-4">
-            <Loader2 className="w-12 h-12 animate-spin" />
+            <Spinner className="size-16" />
             <div className="text-xl font-light">Loading your portfolio...</div>
           </div>
         </div>
@@ -495,7 +512,7 @@ export default function PortfolioPage() {
           className="fixed top-6 right-6 z-20 flex items-center gap-2 px-4 py-2 bg-foreground text-background rounded-full hover:opacity-90 transition-opacity disabled:opacity-50"
         >
           {downloading ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
+            <Spinner className="w-4 h-4" />
           ) : (
             <Download className="w-4 h-4" />
           )}
@@ -778,7 +795,7 @@ export default function PortfolioPage() {
         </main>
 
         {/* BOTTOM GRADIENT OVERLAY */}
-        <div className="fixed bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-background via-background/80 to-transparent pointer-events-none"></div>
+        <div className="fixed bottom-0 left-0 right-0 h-24 bg-linear-to-t from-background via-background/80 to-transparent pointer-events-none"></div>
       </div>
     </ProtectedRoute>
   )

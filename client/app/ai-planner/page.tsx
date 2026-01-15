@@ -6,7 +6,8 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Brain, Sparkles, Loader2, TrendingUp, CheckCircle2, Clock, Target, BarChart3 } from "lucide-react"
+import { Brain, Sparkles, TrendingUp, CheckCircle2, Clock, Target, BarChart3 } from "lucide-react"
+import { Spinner } from "@/components/ui/spinner"
 import { useState, useEffect } from "react"
 import { generateRoadmap, getRoadmap, getMilestones, getTasks, getProgress } from "@/lib/plannerApi"
 import { RoadmapTimeline } from "@/components/ai-planner/RoadmapTimeline"
@@ -100,7 +101,7 @@ export default function AIPlannerPage() {
           <DynamicNavbar />
           <main className="min-h-screen flex items-center justify-center">
             <div className="text-center">
-              <Loader2 className="w-12 h-12 animate-spin mx-auto mb-4 text-primary" />
+              <Spinner className="size-16 mx-auto mb-4" />
               <p className="text-muted-foreground">Loading your roadmap...</p>
             </div>
           </main>
@@ -135,7 +136,7 @@ export default function AIPlannerPage() {
                   >
                     {generating ? (
                       <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <Spinner className="w-4 h-4" />
                         Generating...
                       </>
                     ) : (

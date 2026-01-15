@@ -6,7 +6,8 @@ import { ProtectedRoute } from "@/components/protected-route"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { TrendingUp, ArrowUp, Lightbulb, Loader2, BarChart3, PieChart, Activity, MessageSquare, Bot, Send } from "lucide-react"
+import { TrendingUp, ArrowUp, Lightbulb, BarChart3, PieChart, Activity, MessageSquare, Bot, Send } from "lucide-react"
+import { Spinner } from "@/components/ui/spinner"
 import { useState, useEffect, useRef } from "react"
 import {
   BarChart,
@@ -407,7 +408,7 @@ export default function JobTrendsPage() {
                   {chatLoading && (
                     <div className="flex justify-start">
                       <div className="bg-muted/50 border border-border rounded-lg rounded-tl-none p-4 flex items-center gap-2">
-                        <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                        <Spinner className="w-4 h-4 text-primary" />
                         <span className="text-xs text-muted-foreground">Analyzing market data...</span>
                       </div>
                     </div>
@@ -446,7 +447,7 @@ export default function JobTrendsPage() {
             <section className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-100">
               {loading ? (
                 <div className="flex justify-center p-12">
-                  <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                  <Spinner className="size-8 text-primary" />
                 </div>
               ) : (
                 trends.map((trend, idx) => (
@@ -466,7 +467,7 @@ export default function JobTrendsPage() {
                         </div>
                         <p className="text-muted-foreground text-lg mb-4">{trend.description}</p>
                       </div>
-                      <ArrowUp className="w-6 h-6 text-emerald-500 flex-shrink-0" />
+                      <ArrowUp className="w-6 h-6 text-emerald-500 shrink-0" />
                     </div>
 
                     <div className="grid md:grid-cols-3 gap-6 mb-6 pb-6 border-b border-border">

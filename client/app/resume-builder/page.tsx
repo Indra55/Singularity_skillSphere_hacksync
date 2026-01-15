@@ -10,7 +10,8 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
-import { Loader2, Send, FileText, Sparkles, Download, Code, Target, Wand2, Plus, Award, TrendingUp, Lightbulb, CheckCircle } from "lucide-react"
+import { Send, FileText, Sparkles, Download, Code, Target, Wand2, Plus, Award, TrendingUp, Lightbulb, CheckCircle } from "lucide-react"
+import { Spinner } from "@/components/ui/spinner"
 import ReactMarkdown from "react-markdown"
 import { useReactToPrint } from "react-to-print"
 import { getResumeInfo, updateResume, generateLaTeX, tailorResume, type ResumeInfo } from "@/lib/api"
@@ -47,14 +48,7 @@ export default function ResumeBuilderPage() {
   const [zoom, setZoom] = useState(0.75)
   const [showTailorModal, setShowTailorModal] = useState(false)
   const [jobDescription, setJobDescription] = useState("")
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      role: "ai",
-      content: "👋 Welcome to the AI Resume Editor!\n\nI can help you:\n- **Tailor** your resume to a specific job description\n- **Improve** sections like your summary or skills\n- **Add** new skills, achievements, or experiences\n- **Rewrite** content with stronger language\n\nUse the quick actions below or type your own instructions!",
-      timestamp: new Date(),
-      type: "info"
-    }
-  ])
+  const [messages, setMessages] = useState<Message[]>([])
 
   const resumeRef = useRef<HTMLDivElement>(null)
   const chatEndRef = useRef<HTMLDivElement>(null)
@@ -217,7 +211,7 @@ export default function ResumeBuilderPage() {
             {/* Left Panel: Resume Preview (8 cols) */}
             <div className="lg:col-span-8 flex flex-col gap-4 h-full min-h-0">
               {/* Header Bar */}
-              <Card className="flex-shrink-0 p-4 border-border/40 bg-card/50 backdrop-blur-sm">
+              <Card className="shrink-0 p-4 border-border/40 bg-card/50 backdrop-blur-sm">
                 <div className="flex flex-wrap items-center justify-between gap-4">
                   <div className="flex items-center gap-4">
                     <FileText className="w-5 h-5 text-primary" />
@@ -282,7 +276,7 @@ export default function ResumeBuilderPage() {
                       )
                     ) : (
                       <div className="flex flex-col items-center justify-center h-[800px] w-[600px] bg-white shadow-sm rounded-lg">
-                        <Loader2 className="w-8 h-8 animate-spin mb-4 text-primary" />
+                        <Spinner className="size-8 mb-4" />
                         <p className="text-muted-foreground">Loading resume data...</p>
                       </div>
                     )}
@@ -294,7 +288,7 @@ export default function ResumeBuilderPage() {
             {/* Right Panel: AI Editor (4 cols) */}
             <Card className="lg:col-span-4 flex flex-col h-full min-h-0 overflow-hidden border-border/40 bg-card/50 backdrop-blur-sm shadow-lg">
               {/* Header */}
-              <div className="flex-shrink-0 p-4 border-b border-border/40 bg-gradient-to-r from-primary/5 to-purple-500/5">
+              <div className="shrink-0 p-4 border-b border-border/40 bg-linear-to-r from-primary/5 to-accent/5">
                 <h2 className="font-semibold flex items-center gap-2">
                   <Sparkles className="w-5 h-5 text-primary" />
                   AI Resume Editor
@@ -305,7 +299,7 @@ export default function ResumeBuilderPage() {
               </div>
 
               {/* Quick Actions */}
-              <div className="flex-shrink-0 p-3 border-b border-border/40 bg-muted/10">
+              <div className="shrink-0 p-3 border-b border-border/40 bg-muted/10">
                 <p className="text-xs text-muted-foreground mb-2 font-medium">Quick Actions</p>
                 <div className="flex flex-wrap gap-2">
                   {QUICK_ACTIONS.map((action) => (
@@ -338,7 +332,7 @@ export default function ResumeBuilderPage() {
                             : 'bg-muted/50 border border-border/50'
                         }`}>
                         {msg.role === 'ai' ? (
-                          <div className="prose prose-sm prose-invert max-w-none text-sm">
+                          <div className="prose prose-sm dark:prose-invert max-w-none text-sm">
                             <ReactMarkdown>{msg.content}</ReactMarkdown>
                           </div>
                         ) : (
@@ -353,7 +347,7 @@ export default function ResumeBuilderPage() {
                   {loading && (
                     <div className="flex justify-start">
                       <div className="bg-muted/50 border border-border/50 rounded-lg p-3 flex items-center gap-2">
-                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <Spinner className="w-4 h-4" />
                         <span className="text-sm">AI is working on your resume...</span>
                       </div>
                     </div>
@@ -364,7 +358,7 @@ export default function ResumeBuilderPage() {
 
               {/* Example Prompts */}
               {messages.length <= 2 && (
-                <div className="flex-shrink-0 p-3 border-t border-border/40 bg-muted/5">
+                <div className="shrink-0 p-3 border-t border-border/40 bg-muted/5">
                   <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
                     <Lightbulb className="w-3 h-3" />
                     Try these examples
@@ -384,7 +378,7 @@ export default function ResumeBuilderPage() {
               )}
 
               {/* Input Area */}
-              <div className="flex-shrink-0 p-4 border-t border-border/40 bg-muted/10">
+              <div className="shrink-0 p-4 border-t border-border/40 bg-muted/10">
                 <div className="relative">
                   <Textarea
                     placeholder="E.g., 'Add Python to my skills' or 'Make my summary more concise'..."
@@ -437,7 +431,7 @@ export default function ResumeBuilderPage() {
               />
               <div className="mt-3 p-3 bg-blue-500/5 border border-blue-500/20 rounded-lg">
                 <p className="text-xs text-blue-600 flex items-start gap-2">
-                  <Lightbulb className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                  <Lightbulb className="w-4 h-4 shrink-0 mt-0.5" />
                   <span>
                     <strong>Tip:</strong> Include the full JD with responsibilities, requirements, and preferred qualifications for best results.
                   </span>
@@ -449,7 +443,7 @@ export default function ResumeBuilderPage() {
                 Cancel
               </Button>
               <Button onClick={() => handleTailorToJD()} disabled={!jobDescription.trim() || loading}>
-                {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Sparkles className="w-4 h-4 mr-2" />}
+                {loading ? <Spinner className="w-4 h-4 mr-2" /> : <Sparkles className="w-4 h-4 mr-2" />}
                 Tailor My Resume
               </Button>
             </DialogFooter>

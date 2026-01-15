@@ -18,7 +18,8 @@ interface Task {
     id: string
     title: string
     status: string
-    milestone_id: string
+    milestone_id?: string
+    milestone_title?: string
 }
 
 interface Props {
@@ -39,7 +40,7 @@ export function RoadmapTimeline({ milestones, tasks }: Props) {
                 </div>
                 <div className="h-3 bg-muted rounded-full overflow-hidden">
                     <div
-                        className="h-full bg-gradient-to-r from-primary to-primary/80 transition-all duration-500"
+                        className="h-full bg-linear-to-r from-primary to-primary/80 transition-all duration-500"
                         style={{
                             width: `${milestones.length > 0 ?
                                 (milestones.filter(m => m.progress_percentage === 100).length / milestones.length) * 100
@@ -65,7 +66,7 @@ export function RoadmapTimeline({ milestones, tasks }: Props) {
                             return (
                                 <div key={milestone.id} className="relative flex items-start gap-6">
                                     {/* Timeline Node */}
-                                    <div className="relative z-10 flex-shrink-0">
+                                    <div className="relative z-10 shrink-0">
                                         <div className={`w-16 h-16 rounded-full border-4 flex items-center justify-center transition-all ${isCompleted ? 'border-emerald-500 bg-emerald-500' :
                                                 isInProgress ? 'border-primary bg-primary' :
                                                     'border-border bg-background'

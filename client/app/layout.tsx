@@ -4,6 +4,7 @@ import { Geist, Geist_Mono, Poppins } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import "./globals.css"
 import { AuthProvider } from "@/lib/auth-context"
+import { ToasterProvider } from "@/components/ui/toaster-provider"
 
 const _geist = Geist({ subsets: ["latin"] })
 const _geistMono = Geist_Mono({ subsets: ["latin"] })
@@ -22,13 +23,14 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning={true}>
       <body
         suppressHydrationWarning={true}
         className={`font-sans antialiased ${_poppins.variable}`}
       >
         <AuthProvider>
           {children}
+          <ToasterProvider />
         </AuthProvider>
         <Analytics />
       </body>

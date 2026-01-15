@@ -9,6 +9,7 @@ import { GrainOverlay } from "@/components/grain-overlay"
 import { MagneticButton } from "@/components/magnetic-button"
 import { register, login } from "@/lib/api"
 import { useAuth } from "@/lib/auth-context"
+import { toaster } from "@/lib/toaster"
 
 export default function AuthPage() {
   const [authMode, setAuthMode] = useState<"select" | "signup" | "login">("select")
@@ -167,6 +168,11 @@ function SignUpForm({ onBack, onSwitchToLogin }: { onBack: () => void, onSwitchT
 
       if (regError || !regData) {
         setErrors({ ...errors, form: regError || "Registration failed" });
+        toaster.create({
+          title: "Registration Failed",
+          description: regError || "Please try again.",
+          type: "error"
+        });
         return;
       }
 
@@ -177,7 +183,11 @@ function SignUpForm({ onBack, onSwitchToLogin }: { onBack: () => void, onSwitchT
       });
 
       if (loginError || !loginData) {
-        // Should not happen if reg succeeded, but handle anyway
+        toaster.create({
+          title: "Auto-login failed",
+          description: "Please log in manually.",
+          type: "warning"
+        });
         onSwitchToLogin(); // Redirect to login form
         return;
       }
@@ -186,12 +196,23 @@ function SignUpForm({ onBack, onSwitchToLogin }: { onBack: () => void, onSwitchT
       localStorage.setItem("user", JSON.stringify(loginData.user));
       localStorage.setItem("isAuthenticated", "true");
 
+      toaster.create({
+        title: "Welcome aboard!",
+        description: "Your account has been created successfully.",
+        type: "success"
+      });
+
       // Redirect to onboarding
       window.location.href = "/journey";
 
     } catch (err) {
       console.error("Signup error:", err);
       setErrors({ ...errors, form: "Network error. Please try again." });
+      toaster.create({
+        title: "Network Error",
+        description: "Please check your connection and try again.",
+        type: "error"
+      });
     }
   }
 
@@ -210,11 +231,7 @@ function SignUpForm({ onBack, onSwitchToLogin }: { onBack: () => void, onSwitchT
         <p className="text-foreground/70">Fill in your details to begin your journey.</p>
       </div>
 
-      {apiError && (
-        <div className="mb-6 p-4 rounded-xl bg-destructive/10 border border-destructive/30 text-destructive">
-          {apiError}
-        </div>
-      )}
+
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
@@ -332,6 +349,11 @@ function LoginForm({ onBack }: { onBack: () => void }) {
 
       if (error || !data) {
         setErrors({ ...errors, form: error || "Login failed" });
+        toaster.create({
+          title: "Login Failed",
+          description: error || "Check your credentials.",
+          type: "error"
+        });
         return;
       }
 
@@ -339,12 +361,23 @@ function LoginForm({ onBack }: { onBack: () => void }) {
       localStorage.setItem("user", JSON.stringify(data.user));
       localStorage.setItem("isAuthenticated", "true");
 
+      toaster.create({
+        title: "Login Successful",
+        description: "Welcome back!",
+        type: "success"
+      });
+
       // Redirect to dashboard
       window.location.href = "/dashboard";
 
     } catch (err) {
       console.error("Login error:", err);
       setErrors({ ...errors, form: "Network error. Please try again." });
+      toaster.create({
+        title: "Network Error",
+        description: "Please check your connection and try again.",
+        type: "error"
+      });
     }
   }
 
@@ -363,11 +396,7 @@ function LoginForm({ onBack }: { onBack: () => void }) {
         <p className="text-foreground/70">Log in to access your dashboard.</p>
       </div>
 
-      {apiError && (
-        <div className="mb-6 p-4 rounded-xl bg-destructive/10 border border-destructive/30 text-destructive">
-          {apiError}
-        </div>
-      )}
+
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>

@@ -1,13 +1,10 @@
-import { Loader2Icon } from 'lucide-react'
-
+import { OrbitalLoader } from './orbital-loader'
 import { cn } from '@/lib/utils'
 
-function Spinner({ className, ...props }: React.ComponentProps<'svg'>) {
+function Spinner({ className, ...props }: React.ComponentProps<'div'>) {
   return (
-    <Loader2Icon
-      role="status"
-      aria-label="Loading"
-      className={cn('size-4 animate-spin', className)}
+    <OrbitalLoader
+      className={cn('size-8', className)}
       {...props}
     />
   )

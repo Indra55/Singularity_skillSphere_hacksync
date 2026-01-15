@@ -4,7 +4,8 @@ import { useEffect, useState } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Video, Loader2, RefreshCw, User } from "lucide-react"
+import { Video, RefreshCw, User } from "lucide-react"
+import { Spinner } from "@/components/ui/spinner"
 
 interface MockRoom {
   roomId: string
@@ -69,14 +70,14 @@ export function MockInterviewList() {
           <h3 className="font-semibold text-lg">Mock Interviews</h3>
         </div>
         <Button variant="ghost" size="icon" onClick={fetchRooms} disabled={loading}>
-          {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+          {loading ? <Spinner className="w-4 h-4" /> : <RefreshCw className="w-4 h-4" />}
         </Button>
       </div>
 
       <div className="flex-1 overflow-y-auto space-y-3 pr-1">
         {loading && rooms.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-40 gap-2 text-muted-foreground">
-            <Loader2 className="w-8 h-8 animate-spin" />
+            <Spinner className="size-8" />
             <p className="text-sm">Finding active rooms...</p>
           </div>
         ) : rooms.length === 0 ? (
@@ -109,7 +110,7 @@ export function MockInterviewList() {
       </div>
 
       <div className="mt-4 pt-4 border-t border-border/40">
-        <Button className="w-full bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => window.open(process.env.NEXT_PUBLIC_ML_API_URL || "http://localhost:5000", "_blank")}>
+        <Button className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"                   onClick={() => window.location.href = "https://hacksync-interview.vercel.app/"} >
           Create New Room
         </Button>
       </div>

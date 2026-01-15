@@ -87,7 +87,7 @@ export default function CareerIntelligencePage() {
 
             {/* Advanced Recommendations */}
             <section className="animate-in fade-in slide-in-from-bottom-4 duration-500 delay-200">
-              <Card className="p-8 border-border/40 bg-gradient-to-br from-card/50 to-card/30 backdrop-blur-sm">
+              <Card className="p-8 border-border/40 bg-linear-to-br from-card/50 to-card/30 backdrop-blur-sm">
                 <div className="flex items-start gap-4 mb-6">
                   <div className="p-3 rounded-lg bg-primary/20">
                     <Brain className="w-6 h-6 text-primary" />

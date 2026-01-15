@@ -29,9 +29,9 @@ export default function InterviewPage() {
             </section>
 
             {/* Reassurance Card */}
-            <Card className="p-8 mb-16 border-border/40 bg-gradient-to-br from-secondary/10 to-transparent backdrop-blur-sm border-secondary/30 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100">
+            <Card className="p-8 mb-16 border-border/40 bg-linear-to-br from-secondary/10 to-transparent backdrop-blur-sm animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100">
               <div className="flex items-start gap-4">
-                <Sparkles className="w-6 h-6 text-secondary flex-shrink-0 mt-1" />
+                <Sparkles className="w-6 h-6 text-secondary shrink-0 mt-1" />
                 <div>
                   <h2 className="text-xl font-bold mb-2 text-foreground">You've Got This</h2>
                   <p className="text-foreground leading-relaxed">
@@ -56,7 +56,10 @@ export default function InterviewPage() {
                   The AI coach highlights what you did well, where you can improve, and gives examples of stronger phrasing
                   so every practice round directly levels up your performance.
                 </p>
-                <Button className="gap-2">
+                <Button 
+                  className="gap-2"
+                  onClick={() => window.location.href = "https://hacksync-interview.vercel.app/"}
+                >
                   <Mic className="w-4 h-4" />
                   Practice Interview
                 </Button>
