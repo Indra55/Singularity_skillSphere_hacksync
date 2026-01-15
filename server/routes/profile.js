@@ -19,7 +19,7 @@ router.get("/education", authenticateToken, async (req, res) => {
         console.error("Get education error:", err);
         res.status(500).json({ error: "Failed to fetch education" });
     }
-});
+}); 
 
 /**
  * @route POST /api/profile/education

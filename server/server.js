@@ -17,7 +17,7 @@ const corsOptions = {
     credentials: true, // Allow cookies to be sent
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
-} 
+}
 
 // Middleware
 app.use(cors(corsOptions))
@@ -47,6 +47,7 @@ app.use("/api/recommendations", require("./routes/recommendations"))
 app.use("/api/skills", require("./routes/skills"))
 app.use("/api/resume", require("./routes/resume"))
 app.use("/api/planner", require("./routes/planner"))
+app.use("/api/peer-meetings", require("./routes/peer-meetings"))
 // Health check endpoint
 app.get("/", (req, res) => {
     res.json({

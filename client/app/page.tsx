@@ -213,9 +213,8 @@ export default function Home() {
       </div>
 
       <nav
-        className={`fixed left-0 right-0 top-0 z-50 flex items-center justify-between px-6 py-6 transition-opacity duration-700 md:px-12 ${
-          isLoaded ? "opacity-100" : "opacity-0"
-        }`}
+        className={`fixed left-0 right-0 top-0 z-50 flex items-center justify-between px-6 py-6 transition-opacity duration-700 md:px-12 ${isLoaded ? "opacity-100" : "opacity-0"
+          }`}
       >
         <button
           onClick={() => scrollToSection(0)}
@@ -232,22 +231,20 @@ export default function Home() {
             <button
               key={item}
               onClick={() => scrollToSection(index)}
-              className={`group relative font-sans text-sm font-medium transition-colors ${
-                currentSection === index ? "text-foreground" : "text-foreground/80 hover:text-foreground"
-              }`}
+              className={`group relative font-sans text-sm font-medium transition-colors ${currentSection === index ? "text-foreground" : "text-foreground/80 hover:text-foreground"
+                }`}
             >
               {item}
               <span
-                className={`absolute -bottom-1 left-0 h-px bg-foreground transition-all duration-300 ${
-                  currentSection === index ? "w-full" : "w-0 group-hover:w-full"
-                }`}
+                className={`absolute -bottom-1 left-0 h-px bg-foreground transition-all duration-300 ${currentSection === index ? "w-full" : "w-0 group-hover:w-full"
+                  }`}
               />
             </button>
           ))}
         </div>
 
         <a href="/auth">
-          <MagneticButton variant="secondary" onClick={() => {}}>
+          <MagneticButton variant="secondary" onClick={() => { }}>
             Start Your Journey
           </MagneticButton>
         </a>
@@ -256,9 +253,8 @@ export default function Home() {
       <div
         ref={scrollContainerRef}
         data-scroll-container
-        className={`relative z-10 flex h-screen overflow-x-auto overflow-y-hidden transition-opacity duration-700 ${
-          isLoaded ? "opacity-100" : "opacity-0"
-        }`}
+        className={`relative z-10 flex h-screen overflow-x-auto overflow-y-hidden transition-opacity duration-700 ${isLoaded ? "opacity-100" : "opacity-0"
+          }`}
         style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
         {/* Hero Section */}
@@ -322,7 +318,7 @@ export default function Home() {
               {[
                 { label: "AI Recommender", href: "/ai-planner", icon: "🤖", desc: "AI-powered career planning" },
                 { label: "Resume Builder", href: "/resume-builder", icon: "📄", desc: "Build & optimize your resume" },
-                { label: "Peer Learning Circle", href: "/peer-learning", icon: "👥", desc: "Learn with peers" },
+                { label: "Peer Learning Circle", href: "/peer-learn", icon: "👥", desc: "Learn with peers" },
                 { label: "Portfolio Builder", href: "/portfolio", icon: "💼", desc: "Showcase your projects" },
                 { label: "Job Trend Tracker", href: "/job-trends", icon: "📈", desc: "Track market trends" },
                 { label: "LinkedIn Jobs", href: "/linkedin-jobs", icon: "🔔", desc: "Job notifications" },
